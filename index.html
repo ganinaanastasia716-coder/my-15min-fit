@@ -1,17 +1,47 @@
 <!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>15-Min Fit</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
+    .card { background: #1e1e1e; border-radius: 16px; padding: 20px; margin-top: 20px; }
+    img { width: 100%; max-width: 300px; border-radius: 12px; }
+    .timer { font-size: 48px; font-weight: bold; color: #00e676; margin: 15px 0; }
+    button { background: #0088cc; color: white; border: none; padding: 12px 24px; font-size: 18px; border-radius: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
 
-<html lang=»ru»>
+  <h2>🌅 Зарядка за 15 минут</h2>
+  
+  <div class="card">
+    <img id="exercise-img" src="https://media.giphy.com/media/3o7TKsjLu9I5XwF2a4/giphy.gif" alt="Упражнение">
+    <h3 id="exercise-name">1. Мягкая разминка шеи</h3>
+    <div class="timer" id="timer">00:30</div>
+    <button onclick="startTimer()">▶ Запустить таймер</button>
+  </div>
 
-  <head>
+  <script>
+    let seconds = 30;
+    let timerRef;
 
-    <meta charset=»UTF-8″>
-
-    <title>Название страницы</title>
-
-  </head>
-
-  <body>
-
-  </body>
-
+    function startTimer() {
+      clearInterval(timerRef);
+      seconds = 30;
+      document.getElementById('timer').innerText = "00:30";
+      
+      timerRef = setInterval(() => {
+        seconds--;
+        document.getElementById('timer').innerText = `00:${seconds < 10 ? '0' : ''}${seconds}`;
+        if (seconds <= 0) {
+          clearInterval(timerRef);
+          alert("✅ Отлично! Упражнение окончено!");
+        }
+      }, 1000);
+    }
+  </script>
+</body>
 </html>
