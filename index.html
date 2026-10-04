@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FIT15 — Ultimate Fitness App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -17,82 +17,96 @@
             --ring-color: #0a84ff;
         }
 
-        * { box-sizing: border-box; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+        html, body {
+            width: 100%;
+            height: 100dvh;
+            overflow: hidden;
             background-color: var(--bg-color);
             color: var(--text-color);
-            margin: 0;
-            padding: 20px 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            transition: background-color 0.5s ease;
+        }
+
+        body {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            text-align: center;
-            transition: background-color 0.5s ease;
+            padding: 12px 16px;
         }
 
-        .screen { width: 100%; max-width: 380px; }
+        .screen { 
+            width: 100%; 
+            max-width: 380px; 
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
         .hidden { display: none !important; }
 
-        h1 { font-size: 26px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
-        p.subtitle { opacity: 0.6; font-size: 14px; margin-bottom: 20px; }
+        h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; text-align: center; }
+        p.subtitle { opacity: 0.6; font-size: 13px; margin-bottom: 8px; text-align: center; }
 
         /* ВВОД ДАННЫХ В АНКЕТЕ */
-        .form-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; text-align: left; }
-        .form-row { display: flex; gap: 10px; }
-        label { font-size: 12px; opacity: 0.7; margin-bottom: 4px; display: block; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+        .form-group { display: flex; flex-direction: column; gap: 10px; text-align: left; margin: auto 0; }
+        .form-row { display: flex; gap: 8px; }
+        label { font-size: 11px; opacity: 0.7; margin-bottom: 3px; display: block; text-transform: uppercase; font-weight: 600; }
 
         input, select {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.15);
             background: var(--card-bg);
             color: var(--text-color);
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             outline: none;
-            backdrop-filter: blur(10px);
         }
 
         /* ВЫБОР НАГРУЗКИ */
-        .load-options { display: flex; flex-direction: column; gap: 10px; }
+        .load-options { display: flex; flex-direction: column; gap: 8px; margin: auto 0; }
         .load-card {
             background: var(--card-bg);
             border: 2px solid transparent;
-            border-radius: 16px;
-            padding: 16px;
+            border-radius: 14px;
+            padding: 12px 14px;
             cursor: pointer;
             text-align: left;
             transition: all 0.2s ease;
         }
         .load-card.selected { border-color: var(--btn-color); background: rgba(10, 132, 255, 0.15); }
-        .load-title { font-weight: 700; font-size: 17px; }
-        .load-desc { font-size: 13px; opacity: 0.7; margin-top: 2px; }
+        .load-title { font-weight: 700; font-size: 15px; }
+        .load-desc { font-size: 12px; opacity: 0.7; margin-top: 2px; }
 
         /* ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ */
         .mode-switch {
             display: flex;
             background: var(--card-bg);
-            border-radius: 14px;
-            padding: 4px;
-            margin-bottom: 16px;
+            border-radius: 12px;
+            padding: 3px;
             gap: 4px;
         }
         .mode-btn {
             flex: 1;
-            padding: 10px 4px;
+            padding: 8px 2px;
             border: none;
             background: transparent;
             color: var(--text-color);
             font-weight: 700;
-            font-size: 12px;
-            border-radius: 10px;
+            font-size: 11px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s ease;
         }
         .mode-btn.active { background: var(--btn-color); color: var(--btn-text); }
 
@@ -100,39 +114,37 @@
         .exercise-card {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            padding: 12px 16px;
-            margin-bottom: 12px;
-            animation: fadeIn 0.4s ease;
+            border-radius: 12px;
+            padding: 8px 12px;
+            text-align: center;
         }
-        .exercise-step { font-size: 11px; text-transform: uppercase; opacity: 0.6; letter-spacing: 1px; font-weight: 700; }
-        .exercise-name { font-size: 19px; font-weight: 800; margin-top: 2px; }
+        .exercise-step { font-size: 10px; text-transform: uppercase; opacity: 0.6; font-weight: 700; }
+        .exercise-name { font-size: 16px; font-weight: 800; margin-top: 1px; }
 
         .badge {
             display: inline-block;
             background: var(--card-bg);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 11px;
             font-weight: 700;
-            margin-bottom: 4px;
+            margin: 0 auto;
         }
 
         .phase-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            height: 28px;
-            margin-top: 4px;
+            letter-spacing: 1px;
+            text-align: center;
         }
 
-        /* КРУГОВОЙ ПРОГРЕСС-БАР APPLE STYLE */
+        /* АДАПТИВНЫЙ КРУГОВОЙ ПРОГРЕСС-БАР */
         .timer-container {
             position: relative;
-            width: 220px;
-            height: 220px;
-            margin: 10px auto 16px auto;
+            width: min(45vh, 200px);
+            height: min(45vh, 200px);
+            margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -146,19 +158,19 @@
 
         .progress-ring__circle-bg {
             stroke: rgba(255, 255, 255, 0.1);
-            stroke-width: 12;
+            stroke-width: 10;
         }
 
         .progress-ring__circle {
             stroke: var(--ring-color);
-            stroke-width: 12;
+            stroke-width: 10;
             stroke-linecap: round;
             transition: stroke-dashoffset 0.3s linear, stroke 0.3s ease;
         }
 
         .timer-display {
             position: absolute;
-            font-size: 52px;
+            font-size: min(10vh, 44px);
             font-weight: 800;
             font-variant-numeric: tabular-nums;
             letter-spacing: -1px;
@@ -169,26 +181,25 @@
             background: rgba(255, 149, 0, 0.15);
             border: 1px solid #ff9500;
             color: #ff9500;
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-size: 16px;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 14px;
             font-weight: 800;
-            display: inline-block;
-            margin-bottom: 16px;
+            margin: 0 auto;
         }
 
         /* НАСТРОЙКИ РАУНДОВ И СХЕМ */
-        .interval-settings { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .interval-settings { display: flex; flex-direction: column; gap: 6px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 
         .opt-btn {
             background: var(--card-bg);
             border: 2px solid transparent;
             color: var(--text-color);
-            padding: 10px 4px;
-            border-radius: 12px;
+            padding: 8px 2px;
+            border-radius: 10px;
             font-weight: 700;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
         }
         .opt-btn.active { border-color: var(--btn-color); background: rgba(10, 132, 255, 0.2); }
@@ -198,57 +209,48 @@
             align-items: center;
             justify-content: space-between;
             background: var(--card-bg);
-            padding: 10px 16px;
-            border-radius: 14px;
+            padding: 6px 12px;
+            border-radius: 12px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .adjust-btn {
             background: rgba(255,255,255,0.18);
             color: var(--text-color);
             border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
             font-weight: 800;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
         }
 
-        .controls { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .controls { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 
         button.main-btn {
             background-color: var(--btn-color);
             color: var(--btn-text);
             border: none;
-            padding: 16px;
-            font-size: 18px;
+            padding: 12px;
+            font-size: 16px;
             font-weight: 800;
-            border-radius: 16px;
+            border-radius: 14px;
             cursor: pointer;
             width: 100%;
-            transition: opacity 0.2s ease;
         }
 
         button.secondary-btn {
             background-color: rgba(255, 255, 255, 0.12);
             color: var(--text-color);
             border: none;
-            padding: 12px;
-            font-size: 14px;
+            padding: 8px;
+            font-size: 13px;
             font-weight: 700;
-            border-radius: 14px;
+            border-radius: 10px;
             cursor: pointer;
             width: 100%;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -256,8 +258,10 @@
 
     <!-- ЭКРАН 0: АНКЕТА АТЛЕТА -->
     <div id="profileScreen" class="screen">
-        <h1>Ваш профиль</h1>
-        <p class="subtitle">Укажите параметры для расчёта калорий</p>
+        <div>
+            <h1>Ваш профиль</h1>
+            <p class="subtitle">Параметры для расчёта калорий</p>
+        </div>
 
         <div class="form-group">
             <div>
@@ -289,8 +293,10 @@
 
     <!-- ЭКРАН 1: ВЫБОР НАГРУЗКИ -->
     <div id="setupScreen" class="screen hidden">
-        <h1>Выбор нагрузки</h1>
-        <p class="subtitle">Уровень определяющий интенсивность</p>
+        <div>
+            <h1>Выбор нагрузки</h1>
+            <p class="subtitle">Уровень интенсивности</p>
+        </div>
 
         <div class="load-options">
             <div class="load-card" onclick="selectLoad('🟢 Лёгкая', 10, 3.5, this)">
@@ -309,11 +315,10 @@
             </div>
         </div>
 
-        <br>
         <button class="main-btn" onclick="goToTimer()">Перейти к тренировке ➔</button>
     </div>
 
-    <!-- ЭКРАН 2: ТАЙМЕР С АНИМАЦИЕЙ И КАЛОРИЯМИ -->
+    <!-- ЭКРАН 2: ТАЙМЕР -->
     <div id="timerScreen" class="screen hidden">
         
         <div class="mode-switch">
@@ -322,31 +327,26 @@
             <button id="modeStopwatchBtn" class="mode-btn" onclick="switchMode('stopwatch')">⏱️ Секундомер</button>
         </div>
 
-        <!-- КАРТОЧКА УПРАЖНЕНИЯ GEMINI (если передана) -->
         <div class="exercise-card hidden" id="exerciseCard">
             <div class="exercise-step" id="exerciseStep">Упражнение 1 из 5</div>
             <div class="exercise-name" id="exerciseName">🤖 Загрузка...</div>
         </div>
 
         <div class="badge" id="selectedLoadBadge">🟡 Средняя</div>
-        
         <div class="phase-title" id="phaseTitle">ГОТОВ?</div>
 
-        <!-- КРУГОВОЙ ПРОГРЕСС-БАР -->
         <div class="timer-container">
-            <svg class="progress-ring">
+            <svg class="progress-ring" viewBox="0 0 220 220">
                 <circle class="progress-ring__circle-bg" cx="110" cy="110" r="90" fill="transparent"/>
                 <circle class="progress-ring__circle" id="progressRing" cx="110" cy="110" r="90" fill="transparent"/>
             </svg>
             <div class="timer-display" id="display">00:20</div>
         </div>
 
-        <!-- ВИДДЖЕТ КАЛОРИЙ -->
         <div class="calories-box">
             🔥 <span id="caloriesCount">0.0</span> ккал
         </div>
 
-        <!-- Настройки Интервалов -->
         <div id="intervalSettings" class="interval-settings">
             <div class="grid-3">
                 <button class="opt-btn active" onclick="selectScheme(20, 10, this)">20/10</button>
@@ -355,16 +355,15 @@
             </div>
 
             <div class="rounds-control">
-                <span>Количество раундов:</span>
+                <span>Раундов:</span>
                 <div>
                     <button class="adjust-btn" onclick="changeRounds(-1)">-</button>
-                    <span id="roundsCount" style="margin: 0 12px; font-weight: 800; font-size: 16px;">8</span>
+                    <span id="roundsCount" style="margin: 0 8px; font-weight: 800;">8</span>
                     <button class="adjust-btn" onclick="changeRounds(1)">+</button>
                 </div>
             </div>
         </div>
 
-        <!-- Настройки Таймера -->
         <div id="timerSettings" class="interval-settings hidden">
             <div class="grid-3">
                 <button class="opt-btn" onclick="addMinutes(-1)">-1 мин</button>
@@ -375,9 +374,11 @@
 
         <div class="controls">
             <button id="startBtn" class="main-btn" onclick="toggleRun()">Старт</button>
-            <button class="secondary-btn" onclick="resetAll()">Сбросить</button>
-            <button class="secondary-btn" style="background: rgba(255, 69, 58, 0.2); color: #ff453a;" onclick="exitWorkout()">← На главный экран</button>
-            <button id="finishBtn" class="main-btn" style="background-color: #30d158; display: none;" onclick="finishWorkout()">✅ Завершить тренировку</button>
+            <div style="display: flex; gap: 6px;">
+                <button class="secondary-btn" style="flex: 1;" onclick="resetAll()">Сбросить</button>
+                <button class="secondary-btn" style="flex: 1; background: rgba(255, 69, 58, 0.2); color: #ff453a;" onclick="exitWorkout()">← Главная</button>
+            </div>
+            <button id="finishBtn" class="main-btn" style="background-color: #30d158; display: none;" onclick="finishWorkout()">✅ Завершить</button>
         </div>
     </div>
 
@@ -385,8 +386,19 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // --- ДВИЖОК ЗВУКОВ И ВИБРАЦИИ ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // --- ДВИЖОК ОЗВУЧКИ НА АНГЛИЙСКОМ ---
+        function speakEnglish(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Очищаем прошлые очереди
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 1.1; // Слегка ускоряем темп отсчета
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
 
         function playSound(type = 'click') {
             if (audioCtx.state === 'suspended') {
@@ -424,20 +436,17 @@
                 osc.stop(now + 0.4);
             }
 
-            // Вибрация в Telegram
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('light');
             }
         }
 
-        // Прикрепляем звук ко всем кнопкам
         document.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.closest('.load-card') || e.target.closest('button')) {
                 playSound('click');
             }
         });
 
-        // Данные анкеты
         let userProfile = { gender: 'male', age: 25, weight: 70, height: 175 };
         let bmr = 0;
 
@@ -453,13 +462,11 @@
         let elapsedWorkoutSeconds = 0;
         let interval = null, isRunning = false;
 
-        // Данные Gemini
         let geminiExercises = [];
         let currentExIndex = 0;
 
-        // Переменные для кругового прогресс-бара
         const ring = document.getElementById('progressRing');
-        const radius = ring.r.baseVal.value;
+        const radius = 90;
         const circumference = 2 * Math.PI * radius;
         ring.style.strokeDasharray = `${circumference} ${circumference}`;
 
@@ -468,7 +475,6 @@
             ring.style.strokeDashoffset = offset;
         }
 
-        // Автозагрузка профиля из памяти
         window.onload = function() {
             const saved = localStorage.getItem('fit15_user_profile');
             if (saved) {
@@ -479,7 +485,6 @@
                 document.getElementById('userHeight').value = userProfile.height;
             }
 
-            // Проверяем, были ли переданы упражнения Gemini через URL
             const urlParams = new URLSearchParams(window.location.search);
             const workoutData = urlParams.get('workout');
             if (workoutData) {
@@ -505,7 +510,6 @@
 
             localStorage.setItem('fit15_user_profile', JSON.stringify(userProfile));
 
-            // Формула BMR Mifflin-St Jeor
             if (userProfile.gender === 'male') {
                 bmr = (10 * userProfile.weight) + (6.25 * userProfile.height) - (5 * userProfile.age) + 5;
             } else {
@@ -640,6 +644,11 @@
                     elapsedWorkoutSeconds++;
 
                     if (currentMode === 'interval') {
+                        // Озвучка за 3 секунды до конца текущего этапа (3, 2, 1)
+                        if (intervalSeconds === 3) speakEnglish("Three");
+                        if (intervalSeconds === 2) speakEnglish("Two");
+                        if (intervalSeconds === 1) speakEnglish("One");
+
                         if (intervalSeconds > 1) {
                             intervalSeconds--;
                         } else {
@@ -647,6 +656,7 @@
                             if (isWorkPhase) {
                                 isWorkPhase = false;
                                 intervalSeconds = restTime;
+                                speakEnglish("Rest"); // Предупреждение об отдыхе
                             } else {
                                 if (currentRound < totalRounds) {
                                     currentRound++;
@@ -654,17 +664,23 @@
                                     isWorkPhase = true;
                                     intervalSeconds = workTime;
                                     updateExerciseCard();
+                                    speakEnglish("Go!"); // Голосовая команда к старту следующего упражнения
                                 } else {
                                     clearInterval(interval);
                                     isRunning = false;
                                     btn.textContent = 'Старт';
                                     btn.style.backgroundColor = 'var(--btn-color)';
                                     playSound('finish');
+                                    speakEnglish("Workout Complete!");
                                     alert("🎉 Все раунды пройдены! Отличная тренировка!");
                                 }
                             }
                         }
                     } else if (currentMode === 'timer') {
+                        if (timerSeconds === 3) speakEnglish("Three");
+                        if (timerSeconds === 2) speakEnglish("Two");
+                        if (timerSeconds === 1) speakEnglish("One");
+
                         if (timerSeconds > 0) {
                             timerSeconds--;
                         } else {
@@ -673,6 +689,7 @@
                             btn.textContent = 'Старт';
                             btn.style.backgroundColor = 'var(--btn-color)';
                             playSound('finish');
+                            speakEnglish("Time is up!");
                             alert("🔔 Время тренировки истекло!");
                         }
                     } else {
@@ -687,6 +704,7 @@
                 isRunning = false;
                 btn.textContent = 'Продолжить';
                 btn.style.backgroundColor = 'var(--btn-color)';
+                window.speechSynthesis.cancel();
             }
         }
 
@@ -694,6 +712,7 @@
             clearInterval(interval);
             isRunning = false;
             elapsedWorkoutSeconds = 0;
+            window.speechSynthesis.cancel();
             
             currentRound = 1; currentExIndex = 0; isWorkPhase = true; intervalSeconds = workTime;
             timerSeconds = defaultMinutes * 60; stopwatchTime = 0;
@@ -720,6 +739,7 @@
         function finishWorkout() {
             clearInterval(interval);
             playSound('finish');
+            speakEnglish("Great job!");
             const burnedCalories = document.getElementById('caloriesCount').textContent;
             
             let details = "";
@@ -730,7 +750,7 @@
             }
 
             const data = {
-                mode: geminiExercises.length > 0 ? '🤖 Gemini AI Workout' : (currentMode === 'interval' ? '🔥 Интервалы (HIIT)' : '⏱️ Таймер/Секундомер'),
+                mode: geminiExercises.length > 0 ? '🤖 Персональный план от Ганиной' : (currentMode === 'interval' ? '🔥 Интервалы (HIIT)' : '⏱️ Таймер/Секундомер'),
                 load: chosenLoad,
                 details: details,
                 calories: burnedCalories,
