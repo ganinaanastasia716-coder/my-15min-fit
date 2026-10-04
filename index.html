@@ -18,8 +18,8 @@
             --prep-color: #ff9500;
         }
 
-        * { 
-            box-sizing: border-box; 
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
             user-select: none;
@@ -44,9 +44,9 @@
             padding: 12px 16px;
         }
 
-        .screen { 
-            width: 100%; 
-            max-width: 380px; 
+        .screen {
+            width: 100%;
+            max-width: 380px;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -58,7 +58,6 @@
         h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; text-align: center; }
         p.subtitle { opacity: 0.6; font-size: 13px; margin-bottom: 8px; text-align: center; }
 
-        /* ВВОД ДАННЫХ В АНКЕТЕ */
         .form-group { display: flex; flex-direction: column; gap: 10px; text-align: left; margin: auto 0; }
         .form-row { display: flex; gap: 8px; }
         label { font-size: 11px; opacity: 0.7; margin-bottom: 3px; display: block; text-transform: uppercase; font-weight: 600; }
@@ -75,7 +74,6 @@
             outline: none;
         }
 
-        /* ВЫБОР НАГРУЗКИ */
         .load-options { display: flex; flex-direction: column; gap: 8px; margin: auto 0; }
         .load-card {
             background: var(--card-bg);
@@ -90,7 +88,6 @@
         .load-title { font-weight: 700; font-size: 15px; }
         .load-desc { font-size: 12px; opacity: 0.7; margin-top: 2px; }
 
-        /* ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ */
         .mode-switch {
             display: flex;
             background: var(--card-bg);
@@ -111,7 +108,6 @@
         }
         .mode-btn.active { background: var(--btn-color); color: var(--btn-text); }
 
-        /* КАРТОЧКА УПРАЖНЕНИЯ GEMINI */
         .exercise-card {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -140,7 +136,6 @@
             text-align: center;
         }
 
-        /* АДАПТИВНЫЙ КРУГОВОЙ ПРОГРЕСС-БАР */
         .timer-container {
             position: relative;
             width: min(45vh, 200px);
@@ -177,7 +172,6 @@
             letter-spacing: -1px;
         }
 
-        /* ВИДДЖЕТ КАЛОРИЙ */
         .calories-box {
             background: rgba(255, 149, 0, 0.15);
             border: 1px solid #ff9500;
@@ -189,7 +183,6 @@
             margin: 0 auto;
         }
 
-        /* НАСТРОЙКИ РАУНДОВ И СХЕМ */
         .interval-settings { display: flex; flex-direction: column; gap: 6px; }
         .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 
@@ -216,7 +209,6 @@
             font-size: 13px;
         }
 
-        /* ВЫБОР ПРЕДСТАРТА (3s / 5s / 10s) */
         .prep-selector {
             display: flex;
             align-items: center;
@@ -280,11 +272,22 @@
             cursor: pointer;
             width: 100%;
         }
+
+        /* Стиль для кнопки выхода - всегда видна */
+        .exit-home-btn {
+            background: rgba(255, 255, 255, 0.25) !important;
+            color: #ffffff !important;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            font-weight: 800;
+        }
+
+        .exit-home-btn:hover {
+            background: rgba(255, 255, 255, 0.35) !important;
+            border-color: rgba(255, 255, 255, 0.6);
+        }
     </style>
 </head>
 <body>
-
-    <!-- ЭКРАН 0: АНКЕТА АТЛЕТА -->
     <div id="profileScreen" class="screen">
         <div>
             <h1>Ваш профиль</h1>
@@ -319,7 +322,6 @@
         <button class="main-btn" onclick="saveProfileAndNext()">Сохранить и продолжить ➔</button>
     </div>
 
-    <!-- ЭКРАН 1: ВЫБОР НАГРУЗКИ -->
     <div id="setupScreen" class="screen hidden">
         <div>
             <h1>Выбор нагрузки</h1>
@@ -346,9 +348,7 @@
         <button class="main-btn" onclick="goToTimer()">Перейти к тренировке ➔</button>
     </div>
 
-    <!-- ЭКРАН 2: ТАЙМЕР -->
     <div id="timerScreen" class="screen hidden">
-        
         <div class="mode-switch">
             <button id="modeIntervalBtn" class="mode-btn active" onclick="switchMode('interval')">🔥 Интервалы</button>
             <button id="modeTimerBtn" class="mode-btn" onclick="switchMode('timer')">⏳ Таймер</button>
@@ -400,7 +400,6 @@
             </div>
         </div>
 
-        <!-- КНОПКА ВЫБОРА ПРЕДСТАРТА -->
         <div class="prep-selector">
             <span>⏱️ Отсчёт перед стартом:</span>
             <div class="prep-pills">
@@ -414,31 +413,44 @@
             <button id="startBtn" class="main-btn" onclick="toggleRun()">Старт</button>
             <div style="display: flex; gap: 6px;">
                 <button class="secondary-btn" style="flex: 1;" onclick="resetAll()">Сбросить</button>
-                <button class="secondary-btn" style="flex: 1; background: rgba(255, 69, 58, 0.2); color: #ff453a;" onclick="exitWorkout()">← Главная</button>
+                <button class="secondary-btn exit-home-btn" style="flex: 1;" onclick="exitWorkout()">← Главная</button>
             </div>
             <button id="finishBtn" class="main-btn" style="background-color: #30d158; display: none;" onclick="finishWorkout()">✅ Завершить</button>
         </div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.expand();
+        }
 
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioCtx = window.AudioContext ? new AudioContext() : null;
 
-        // --- ДВИЖОК ОЗВУЧКИ НА АНГЛИЙСКОМ ---
-        function speakEnglish(text) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-US';
-                utterance.rate = 1.1;
-                utterance.pitch = 1.0;
-                window.speechSynthesis.speak(utterance);
+        function safeHaptic(type = 'light') {
+            if (tg && tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred(type);
             }
         }
 
+        function speakEnglish(text) {
+            if (!('speechSynthesis' in window)) {
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 1.1;
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+
         function playSound(type = 'click') {
+            if (!audioCtx) {
+                return;
+            }
+
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
@@ -474,13 +486,12 @@
                 osc.stop(now + 0.4);
             }
 
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('light');
-            }
+            safeHaptic('light');
         }
 
         document.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.closest('.load-card') || e.target.closest('button')) {
+            const isButtonLike = e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('.load-card');
+            if (isButtonLike) {
                 playSound('click');
             }
         });
@@ -488,15 +499,14 @@
         let userProfile = { gender: 'male', age: 25, weight: 70, height: 175 };
         let bmr = 0;
 
-        let chosenLoad = "🟡 Средняя";
+        let chosenLoad = '🟡 Средняя';
         let defaultMinutes = 15;
         let currentMet = 6.0;
         let currentMode = 'interval';
-        
+
         let workTime = 20, restTime = 10, totalRounds = 8, currentRound = 1;
         let isWorkPhase = true, intervalSeconds = 20;
 
-        // ПРЕДСТАРТ
         let prepTimeChosen = 3;
         let prepSecondsLeft = 3;
         let isPrepPhase = false;
@@ -507,15 +517,21 @@
 
         let geminiExercises = [];
         let currentExIndex = 0;
+        let focusZone = 'все';
 
         const ring = document.getElementById('progressRing');
         const radius = 90;
         const circumference = 2 * Math.PI * radius;
         ring.style.strokeDasharray = `${circumference} ${circumference}`;
 
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
         function setProgress(percent) {
-            const offset = circumference - (percent / 100 * circumference);
-            ring.style.strokeDashoffset = offset;
+            const safePercent = clamp(percent, 0, 100);
+            const offset = circumference - (safePercent / 100 * circumference);
+            ring.style.strokeDashoffset = String(offset);
         }
 
         window.onload = function() {
@@ -530,17 +546,22 @@
 
             const urlParams = new URLSearchParams(window.location.search);
             const workoutData = urlParams.get('workout');
+            focusZone = urlParams.get('focus') || 'все';
+            currentMet = parseFloat(urlParams.get('met')) || 6.0;
+            workTime = parseInt(urlParams.get('work_time')) || 20;
+            restTime = parseInt(urlParams.get('rest_time')) || 10;
+            totalRounds = parseInt(urlParams.get('rounds')) || 8;
+            document.getElementById('roundsCount').textContent = totalRounds;
+
             if (workoutData) {
                 try {
                     geminiExercises = JSON.parse(decodeURIComponent(workoutData));
                     if (geminiExercises.length > 0) {
-                        totalRounds = geminiExercises.length;
-                        document.getElementById('roundsCount').textContent = totalRounds;
                         document.getElementById('exerciseCard').classList.remove('hidden');
                         updateExerciseCard();
                     }
-                } catch(e) {
-                    console.error("Ошибка парсинга упражнений Gemini", e);
+                } catch (e) {
+                    console.error('Ошибка парсинга упражнений Gemini', e);
                 }
             }
         };
@@ -569,6 +590,7 @@
             currentMet = met;
             document.querySelectorAll('.load-card').forEach(c => c.classList.remove('selected'));
             element.classList.add('selected');
+            document.getElementById('selectedLoadBadge').textContent = chosenLoad;
         }
 
         function goToTimer() {
@@ -587,9 +609,11 @@
         }
 
         function switchMode(mode) {
-            if (isRunning) toggleRun();
+            if (isRunning) {
+                toggleRun();
+            }
             currentMode = mode;
-            
+
             document.getElementById('modeIntervalBtn').classList.toggle('active', mode === 'interval');
             document.getElementById('modeTimerBtn').classList.toggle('active', mode === 'timer');
             document.getElementById('modeStopwatchBtn').classList.toggle('active', mode === 'stopwatch');
@@ -602,7 +626,8 @@
 
         function selectScheme(work, rest, btn) {
             if (isRunning) return;
-            workTime = work; restTime = rest;
+            workTime = work;
+            restTime = rest;
             document.querySelectorAll('#intervalSettings .opt-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             resetAll();
@@ -624,14 +649,17 @@
         function updateCalories() {
             const hours = elapsedWorkoutSeconds / 3600;
             const burned = (bmr / 24) * currentMet * hours;
-            document.getElementById('caloriesCount').textContent = burned.toFixed(1);
+            document.getElementById('caloriesCount').textContent = (Number.isFinite(burned) ? burned : 0).toFixed(1);
         }
 
         function updateExerciseCard() {
-            if (geminiExercises.length === 0) return;
+            if (geminiExercises.length === 0) {
+                return;
+            }
+
             const currentEx = geminiExercises[currentExIndex];
             document.getElementById('exerciseStep').textContent = `Упражнение ${currentExIndex + 1} из ${geminiExercises.length}`;
-            document.getElementById('exerciseName').textContent = currentEx ? currentEx.name : "Финиш!";
+            document.getElementById('exerciseName').textContent = currentEx ? currentEx.name : 'Финиш!';
         }
 
         function updateDisplay() {
@@ -639,49 +667,50 @@
             const phaseTitle = document.getElementById('phaseTitle');
             const body = document.body;
 
-            // ФАЗА ПРИГОТОВЛЕНИЯ (ОТСЧЕТ 3/5/10 сек)
             if (isPrepPhase) {
-                body.style.backgroundColor = "var(--prep-color)";
+                body.style.backgroundColor = 'var(--prep-color)';
                 document.documentElement.style.setProperty('--ring-color', '#ffffff');
-                phaseTitle.textContent = "⏱️ ПРИГОТОВИТЬСЯ";
+                phaseTitle.textContent = '⏱️ ПРИГОТОВИТЬСЯ';
                 display.textContent = `00:${String(prepSecondsLeft).padStart(2, '0')}`;
-                setProgress((prepSecondsLeft / prepTimeChosen) * 100);
+                const prepProgress = prepTimeChosen > 0 ? (prepSecondsLeft / prepTimeChosen) * 100 : 0;
+                setProgress(prepProgress);
                 return;
             }
 
             if (currentMode === 'interval') {
                 const s = String(intervalSeconds).padStart(2, '0');
                 display.textContent = `00:${s}`;
-                
+
                 const totalPhaseSeconds = isWorkPhase ? workTime : restTime;
-                const percent = (intervalSeconds / totalPhaseSeconds) * 100;
+                const percent = totalPhaseSeconds > 0 ? (intervalSeconds / totalPhaseSeconds) * 100 : 0;
                 setProgress(percent);
 
                 if (!isRunning && currentRound === 1 && isWorkPhase && intervalSeconds === workTime) {
-                    phaseTitle.textContent = "ГОТОВ?";
-                    body.style.backgroundColor = "var(--bg-color)";
+                    phaseTitle.textContent = 'ГОТОВ?';
+                    body.style.backgroundColor = 'var(--bg-color)';
                     document.documentElement.style.setProperty('--ring-color', 'var(--btn-color)');
                 } else if (isWorkPhase) {
                     phaseTitle.textContent = `🔥 РАБОТА (${currentRound}/${totalRounds})`;
-                    body.style.backgroundColor = "var(--work-color)";
+                    body.style.backgroundColor = 'var(--work-color)';
                     document.documentElement.style.setProperty('--ring-color', '#ffffff');
                 } else {
                     phaseTitle.textContent = `🧘 ОТДЫХ (${currentRound}/${totalRounds})`;
-                    body.style.backgroundColor = "var(--rest-color)";
+                    body.style.backgroundColor = 'var(--rest-color)';
                     document.documentElement.style.setProperty('--ring-color', '#ffffff');
                 }
             } else if (currentMode === 'timer') {
-                body.style.backgroundColor = "var(--bg-color)";
+                body.style.backgroundColor = 'var(--bg-color)';
                 document.documentElement.style.setProperty('--ring-color', 'var(--btn-color)');
-                phaseTitle.textContent = "ТАЙМЕР";
+                phaseTitle.textContent = 'ТАЙМЕР';
+                const base = Math.max(defaultMinutes * 60, 1);
                 const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
                 const s = String(timerSeconds % 60).padStart(2, '0');
                 display.textContent = `${m}:${s}`;
-                setProgress((timerSeconds / (defaultMinutes * 60)) * 100);
+                setProgress((timerSeconds / base) * 100);
             } else {
-                body.style.backgroundColor = "var(--bg-color)";
+                body.style.backgroundColor = 'var(--bg-color)';
                 document.documentElement.style.setProperty('--ring-color', '#ff9500');
-                phaseTitle.textContent = "СЕКУНДОМЕР";
+                phaseTitle.textContent = 'СЕКУНДОМЕР';
                 const m = String(Math.floor(stopwatchTime / 60)).padStart(2, '0');
                 const s = String(stopwatchTime % 60).padStart(2, '0');
                 display.textContent = `${m}:${s}`;
@@ -701,7 +730,6 @@
                 btn.style.backgroundColor = 'rgba(255,255,255,0.25)';
                 finishBtn.style.display = 'block';
 
-                // Если старт происходит в самом начале — запускаем подфазу Подготовки
                 if (currentRound === 1 && isWorkPhase && intervalSeconds === workTime && elapsedWorkoutSeconds === 0) {
                     isPrepPhase = true;
                     prepSecondsLeft = prepTimeChosen;
@@ -709,7 +737,6 @@
                 }
 
                 interval = setInterval(() => {
-                    // ЕСЛИ ИДЕТ ФАЗА ПРИГОТОВЛЕНИЯ
                     if (isPrepPhase) {
                         if (prepSecondsLeft > 1) {
                             prepSecondsLeft--;
@@ -718,21 +745,19 @@
                             }
                         } else {
                             isPrepPhase = false;
-                            speakEnglish("Go!");
+                            speakEnglish('Go!');
                             playSound('phase');
                         }
                         updateDisplay();
                         return;
                     }
 
-                    // ОСНОВНОЙ ТАЙМЕР
                     elapsedWorkoutSeconds++;
 
                     if (currentMode === 'interval') {
-                        // Озвучка за 3 секунды до смены фазы
-                        if (intervalSeconds === 3) speakEnglish("Three");
-                        if (intervalSeconds === 2) speakEnglish("Two");
-                        if (intervalSeconds === 1) speakEnglish("One");
+                        if (intervalSeconds === 3) speakEnglish('Three');
+                        if (intervalSeconds === 2) speakEnglish('Two');
+                        if (intervalSeconds === 1) speakEnglish('One');
 
                         if (intervalSeconds > 1) {
                             intervalSeconds--;
@@ -741,7 +766,7 @@
                             if (isWorkPhase) {
                                 isWorkPhase = false;
                                 intervalSeconds = restTime;
-                                speakEnglish("Rest");
+                                speakEnglish('Rest');
                             } else {
                                 if (currentRound < totalRounds) {
                                     currentRound++;
@@ -749,22 +774,22 @@
                                     isWorkPhase = true;
                                     intervalSeconds = workTime;
                                     updateExerciseCard();
-                                    speakEnglish("Go!");
+                                    speakEnglish('Go!');
                                 } else {
                                     clearInterval(interval);
                                     isRunning = false;
                                     btn.textContent = 'Старт';
                                     btn.style.backgroundColor = 'var(--btn-color)';
                                     playSound('finish');
-                                    speakEnglish("Workout Complete!");
-                                    alert("🎉 Все раунды пройдены! Отличная тренировка!");
+                                    speakEnglish('Workout Complete!');
+                                    alert('🎉 Все раунды пройдены! Отличная тренировка!');
                                 }
                             }
                         }
                     } else if (currentMode === 'timer') {
-                        if (timerSeconds === 3) speakEnglish("Three");
-                        if (timerSeconds === 2) speakEnglish("Two");
-                        if (timerSeconds === 1) speakEnglish("One");
+                        if (timerSeconds === 3) speakEnglish('Three');
+                        if (timerSeconds === 2) speakEnglish('Two');
+                        if (timerSeconds === 1) speakEnglish('One');
 
                         if (timerSeconds > 0) {
                             timerSeconds--;
@@ -774,8 +799,8 @@
                             btn.textContent = 'Старт';
                             btn.style.backgroundColor = 'var(--btn-color)';
                             playSound('finish');
-                            speakEnglish("Time is up!");
-                            alert("🔔 Время тренировки истекло!");
+                            speakEnglish('Time is up!');
+                            alert('🔔 Время тренировки истекло!');
                         }
                     } else {
                         stopwatchTime++;
@@ -783,13 +808,14 @@
 
                     updateDisplay();
                 }, 1000);
-
             } else {
                 clearInterval(interval);
                 isRunning = false;
                 btn.textContent = 'Продолжить';
                 btn.style.backgroundColor = 'var(--btn-color)';
-                window.speechSynthesis.cancel();
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
             }
         }
 
@@ -798,13 +824,20 @@
             isRunning = false;
             isPrepPhase = false;
             elapsedWorkoutSeconds = 0;
-            window.speechSynthesis.cancel();
-            
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+
             prepSecondsLeft = prepTimeChosen;
-            currentRound = 1; currentExIndex = 0; isWorkPhase = true; intervalSeconds = workTime;
-            timerSeconds = defaultMinutes * 60; stopwatchTime = 0;
-            
-            document.body.style.backgroundColor = "var(--bg-color)";
+            currentRound = 1;
+            currentExIndex = 0;
+            isWorkPhase = true;
+            intervalSeconds = workTime;
+            timerSeconds = defaultMinutes * 60;
+            stopwatchTime = 0;
+
+            document.body.style.backgroundColor = 'var(--bg-color)';
             const btn = document.getElementById('startBtn');
             btn.textContent = 'Старт';
             btn.style.backgroundColor = 'var(--btn-color)';
@@ -815,7 +848,7 @@
 
         function exitWorkout() {
             if (isRunning) {
-                const confirmExit = confirm("Тренировка идет! Вы уверены, что хотите выйти?");
+                const confirmExit = confirm('Тренировка идет! Вы уверены, что хотите выйти?');
                 if (!confirmExit) return;
             }
             resetAll();
@@ -826,10 +859,10 @@
         function finishWorkout() {
             clearInterval(interval);
             playSound('finish');
-            speakEnglish("Great job!");
+            speakEnglish('Great job!');
             const burnedCalories = document.getElementById('caloriesCount').textContent;
-            
-            let details = "";
+
+            let details = '';
             if (currentMode === 'interval') {
                 details = `Схема ${workTime}/${restTime} • Раунды: ${currentRound}/${totalRounds}`;
             } else {
@@ -837,14 +870,19 @@
             }
 
             const data = {
-                mode: geminiExercises.length > 0 ? '🤖 Персональный план от Ганиной' : (currentMode === 'interval' ? '🔥 Интервалы (HIIT)' : '⏱️ Таймер/Секундомер'),
+                mode: geminiExercises.length > 0 ? '🤖 Персональный план от Ганиной' : (currentMode === 'interval' ? '🔥 Интервалы (HIIT)' : '⏱️ Таймер / Секундомер'),
                 load: chosenLoad,
+                focus: focusZone,
                 details: details,
                 calories: burnedCalories,
                 weight: userProfile.weight
             };
 
-            tg.sendData(JSON.stringify(data));
+            if (tg && tg.sendData) {
+                tg.sendData(JSON.stringify(data));
+            } else {
+                console.log('Workout result:', data);
+            }
         }
     </script>
 </body>
