@@ -3,121 +3,678 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>15-Min Fit Секундомер</title>
-    <!-- Подключаем Telegram Web App SDK -->
+    <title>FIT15 — Ultimate Fitness App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #000000);
+            --text-color: var(--tg-theme-text-color, #ffffff);
+            --btn-color: var(--tg-theme-button-color, #0a84ff);
+            --btn-text: var(--tg-theme-button-text-color, #ffffff);
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --work-color: #ff453a;
+            --rest-color: #30d158;
+            --ring-color: #0a84ff;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #1c1c1e);
-            color: var(--tg-theme-text-color, #ffffff);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
+            min-height: 100vh;
             text-align: center;
+            transition: background-color 0.5s ease;
         }
 
-        h1 {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
+        .screen { width: 100%; max-width: 380px; }
+        .hidden { display: none !important; }
 
-        .timer {
-            font-size: 64px;
-            font-weight: bold;
-            font-variant-numeric: tabular-nums;
-            margin: 20px 0;
-            color: var(--tg-theme-button-color, #007aff);
-        }
+        h1 { font-size: 26px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
+        p.subtitle { opacity: 0.6; font-size: 14px; margin-bottom: 20px; }
 
-        .controls {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
+        /* ВВОД ДАННЫХ В АНКЕТЕ */
+        .form-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; text-align: left; }
+        .form-row { display: flex; gap: 10px; }
+        label { font-size: 12px; opacity: 0.7; margin-bottom: 4px; display: block; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
 
-        button {
-            background-color: var(--tg-theme-button-color, #007aff);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            padding: 14px 28px;
-            font-size: 18px;
-            font-weight: 600;
+        input, select {
+            width: 100%;
+            padding: 14px;
             border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: var(--card-bg);
+            color: var(--text-color);
+            font-size: 16px;
+            font-weight: 600;
+            outline: none;
+            backdrop-filter: blur(10px);
+        }
+
+        /* ВЫБОР НАГРУЗКИ */
+        .load-options { display: flex; flex-direction: column; gap: 10px; }
+        .load-card {
+            background: var(--card-bg);
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 16px;
             cursor: pointer;
-            transition: opacity 0.2s;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+        .load-card.selected { border-color: var(--btn-color); background: rgba(10, 132, 255, 0.15); }
+        .load-title { font-weight: 700; font-size: 17px; }
+        .load-desc { font-size: 13px; opacity: 0.7; margin-top: 2px; }
+
+        /* ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ */
+        .mode-switch {
+            display: flex;
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 16px;
+            gap: 4px;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 10px 4px;
+            border: none;
+            background: transparent;
+            color: var(--text-color);
+            font-weight: 700;
+            font-size: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .mode-btn.active { background: var(--btn-color); color: var(--btn-text); }
+
+        /* КАРТОЧКА УПРАЖНЕНИЯ GEMINI */
+        .exercise-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            animation: fadeIn 0.4s ease;
+        }
+        .exercise-step { font-size: 11px; text-transform: uppercase; opacity: 0.6; letter-spacing: 1px; font-weight: 700; }
+        .exercise-name { font-size: 19px; font-weight: 800; margin-top: 2px; }
+
+        .badge {
+            display: inline-block;
+            background: var(--card-bg);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 4px;
         }
 
-        button:active {
-            opacity: 0.8;
+        .phase-title {
+            font-size: 20px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            height: 28px;
+            margin-top: 4px;
         }
 
-        button.reset {
-            background-color: #ff3b30;
+        /* КРУГОВОЙ ПРОГРЕСС-БАР APPLE STYLE */
+        .timer-container {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin: 10px auto 16px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .progress-ring__circle-bg {
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 12;
+        }
+
+        .progress-ring__circle {
+            stroke: var(--ring-color);
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.3s linear, stroke 0.3s ease;
+        }
+
+        .timer-display {
+            position: absolute;
+            font-size: 52px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -1px;
+        }
+
+        /* ВИДДЖЕТ КАЛОРИЙ */
+        .calories-box {
+            background: rgba(255, 149, 0, 0.15);
+            border: 1px solid #ff9500;
+            color: #ff9500;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: 800;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+
+        /* НАСТРОЙКИ РАУНДОВ И СХЕМ */
+        .interval-settings { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+        .opt-btn {
+            background: var(--card-bg);
+            border: 2px solid transparent;
+            color: var(--text-color);
+            padding: 10px 4px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .opt-btn.active { border-color: var(--btn-color); background: rgba(10, 132, 255, 0.2); }
+
+        .rounds-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-bg);
+            padding: 10px 16px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .adjust-btn {
+            background: rgba(255,255,255,0.18);
+            color: var(--text-color);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 18px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .controls { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+
+        button.main-btn {
+            background-color: var(--btn-color);
+            color: var(--btn-text);
+            border: none;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 800;
+            border-radius: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.2s ease;
+        }
+
+        button.secondary-btn {
+            background-color: rgba(255, 255, 255, 0.12);
+            color: var(--text-color);
+            border: none;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
 
-    <h1>⏱️ Секундомер тренировки</h1>
-    
-    <div class="timer" id="display">00:00.0</div>
+    <!-- ЭКРАН 0: АНКЕТА АТЛЕТА -->
+    <div id="profileScreen" class="screen">
+        <h1>Ваш профиль</h1>
+        <p class="subtitle">Укажите параметры для расчёта калорий</p>
 
-    <div class="controls">
-        <button id="startBtn" onclick="toggleTimer()">Старт</button>
-        <button class="reset" onclick="resetTimer()">Сброс</button>
+        <div class="form-group">
+            <div>
+                <label>Пол</label>
+                <select id="userGender">
+                    <option value="male">👨 Мужской</option>
+                    <option value="female">👩 Женский</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div style="flex: 1;">
+                    <label>Возраст</label>
+                    <input type="number" id="userAge" value="25" min="10" max="99">
+                </div>
+                <div style="flex: 1;">
+                    <label>Вес (кг)</label>
+                    <input type="number" id="userWeight" value="70" min="30" max="250">
+                </div>
+                <div style="flex: 1;">
+                    <label>Рост (см)</label>
+                    <input type="number" id="userHeight" value="175" min="100" max="230">
+                </div>
+            </div>
+        </div>
+
+        <button class="main-btn" onclick="saveProfileAndNext()">Сохранить и продолжить ➔</button>
+    </div>
+
+    <!-- ЭКРАН 1: ВЫБОР НАГРУЗКИ -->
+    <div id="setupScreen" class="screen hidden">
+        <h1>Выбор нагрузки</h1>
+        <p class="subtitle">Уровень определяющий интенсивность</p>
+
+        <div class="load-options">
+            <div class="load-card" onclick="selectLoad('🟢 Лёгкая', 10, 3.5, this)">
+                <div class="load-title">🟢 Лёгкая</div>
+                <div class="load-desc">Зарядка / Разминка • MET 3.5</div>
+            </div>
+
+            <div class="load-card selected" onclick="selectLoad('🟡 Средняя', 15, 6.0, this)">
+                <div class="load-title">🟡 Средняя</div>
+                <div class="load-desc">Основной комплекс FIT15 • MET 6.0</div>
+            </div>
+
+            <div class="load-card" onclick="selectLoad('🔴 Интенсивная', 20, 8.5, this)">
+                <div class="load-title">🔴 Интенсивная</div>
+                <div class="load-desc">Максимальный темп / HIIT • MET 8.5</div>
+            </div>
+        </div>
+
+        <br>
+        <button class="main-btn" onclick="goToTimer()">Перейти к тренировке ➔</button>
+    </div>
+
+    <!-- ЭКРАН 2: ТАЙМЕР С АНИМАЦИЕЙ И КАЛОРИЯМИ -->
+    <div id="timerScreen" class="screen hidden">
+        
+        <div class="mode-switch">
+            <button id="modeIntervalBtn" class="mode-btn active" onclick="switchMode('interval')">🔥 Интервалы</button>
+            <button id="modeTimerBtn" class="mode-btn" onclick="switchMode('timer')">⏳ Таймер</button>
+            <button id="modeStopwatchBtn" class="mode-btn" onclick="switchMode('stopwatch')">⏱️ Секундомер</button>
+        </div>
+
+        <!-- КАРТОЧКА УПРАЖНЕНИЯ GEMINI (если передана) -->
+        <div class="exercise-card hidden" id="exerciseCard">
+            <div class="exercise-step" id="exerciseStep">Упражнение 1 из 5</div>
+            <div class="exercise-name" id="exerciseName">🤖 Загрузка...</div>
+        </div>
+
+        <div class="badge" id="selectedLoadBadge">🟡 Средняя</div>
+        
+        <div class="phase-title" id="phaseTitle">ГОТОВ?</div>
+
+        <!-- КРУГОВОЙ ПРОГРЕСС-БАР -->
+        <div class="timer-container">
+            <svg class="progress-ring">
+                <circle class="progress-ring__circle-bg" cx="110" cy="110" r="90" fill="transparent"/>
+                <circle class="progress-ring__circle" id="progressRing" cx="110" cy="110" r="90" fill="transparent"/>
+            </svg>
+            <div class="timer-display" id="display">00:20</div>
+        </div>
+
+        <!-- ВИДДЖЕТ КАЛОРИЙ -->
+        <div class="calories-box">
+            🔥 <span id="caloriesCount">0.0</span> ккал
+        </div>
+
+        <!-- Настройки Интервалов -->
+        <div id="intervalSettings" class="interval-settings">
+            <div class="grid-3">
+                <button class="opt-btn active" onclick="selectScheme(20, 10, this)">20/10</button>
+                <button class="opt-btn" onclick="selectScheme(30, 30, this)">30/30</button>
+                <button class="opt-btn" onclick="selectScheme(40, 20, this)">40/20</button>
+            </div>
+
+            <div class="rounds-control">
+                <span>Количество раундов:</span>
+                <div>
+                    <button class="adjust-btn" onclick="changeRounds(-1)">-</button>
+                    <span id="roundsCount" style="margin: 0 12px; font-weight: 800; font-size: 16px;">8</span>
+                    <button class="adjust-btn" onclick="changeRounds(1)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Настройки Таймера -->
+        <div id="timerSettings" class="interval-settings hidden">
+            <div class="grid-3">
+                <button class="opt-btn" onclick="addMinutes(-1)">-1 мин</button>
+                <button class="opt-btn" onclick="addMinutes(1)">+1 мин</button>
+                <button class="opt-btn" onclick="addMinutes(5)">+5 мин</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn" class="main-btn" onclick="toggleRun()">Старт</button>
+            <button class="secondary-btn" onclick="resetAll()">Сбросить</button>
+            <button id="finishBtn" class="main-btn" style="background-color: #30d158; display: none;" onclick="finishWorkout()">✅ Завершить тренировку</button>
+        </div>
     </div>
 
     <script>
-        // Инициализация Telegram Mini App
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let startTime = 0;
-        let elapsedTime = 0;
-        let timerInterval = null;
-        let isRunning = false;
+        // Данные анкеты
+        let userProfile = { gender: 'male', age: 25, weight: 70, height: 175 };
+        let bmr = 0;
 
-        function updateDisplay() {
-            const time = new Date(elapsedTime);
-            const minutes = String(time.getUTCMinutes()).padStart(2, '0');
-            const seconds = String(time.getUTCSeconds()).padStart(2, '0');
-            const milliseconds = String(Math.floor(time.getUTCMilliseconds() / 100));
-            document.getElementById('display').textContent = `${minutes}:${seconds}.${milliseconds}`;
+        let chosenLoad = "🟡 Средняя";
+        let defaultMinutes = 15;
+        let currentMet = 6.0;
+        let currentMode = 'interval';
+        
+        let workTime = 20, restTime = 10, totalRounds = 8, currentRound = 1;
+        let isWorkPhase = true, intervalSeconds = 20;
+
+        let timerSeconds = 15 * 60, stopwatchTime = 0;
+        let elapsedWorkoutSeconds = 0;
+        let interval = null, isRunning = false;
+
+        // Данные Gemini
+        let geminiExercises = [];
+        let currentExIndex = 0;
+
+        // Переменные для кругового прогресс-бара
+        const ring = document.getElementById('progressRing');
+        const radius = ring.r.baseVal.value;
+        const circumference = 2 * Math.PI * radius;
+        ring.style.strokeDasharray = `${circumference} ${circumference}`;
+
+        function setProgress(percent) {
+            const offset = circumference - (percent / 100 * circumference);
+            ring.style.strokeDashoffset = offset;
         }
 
-        function toggleTimer() {
-            const btn = document.getElementById('startBtn');
-            if (!isRunning) {
-                startTime = Date.now() - elapsedTime;
-                timerInterval = setInterval(() => {
-                    elapsedTime = Date.now() - startTime;
-                    updateDisplay();
-                }, 100);
-                btn.textContent = 'Пауза';
-                btn.style.backgroundColor = '#ff9500';
-                isRunning = true;
+        // Автозагрузка профиля из памяти
+        window.onload = function() {
+            const saved = localStorage.getItem('fit15_user_profile');
+            if (saved) {
+                userProfile = JSON.parse(saved);
+                document.getElementById('userGender').value = userProfile.gender;
+                document.getElementById('userAge').value = userProfile.age;
+                document.getElementById('userWeight').value = userProfile.weight;
+                document.getElementById('userHeight').value = userProfile.height;
+            }
+
+            // Проверяем, были ли переданы упражнения Gemini через URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const workoutData = urlParams.get('workout');
+            if (workoutData) {
+                try {
+                    geminiExercises = JSON.parse(decodeURIComponent(workoutData));
+                    if (geminiExercises.length > 0) {
+                        totalRounds = geminiExercises.length;
+                        document.getElementById('roundsCount').textContent = totalRounds;
+                        document.getElementById('exerciseCard').classList.remove('hidden');
+                        updateExerciseCard();
+                    }
+                } catch(e) {
+                    console.error("Ошибка парсинга упражнений Gemini", e);
+                }
+            }
+        };
+
+        function saveProfileAndNext() {
+            userProfile.gender = document.getElementById('userGender').value;
+            userProfile.age = parseFloat(document.getElementById('userAge').value) || 25;
+            userProfile.weight = parseFloat(document.getElementById('userWeight').value) || 70;
+            userProfile.height = parseFloat(document.getElementById('userHeight').value) || 175;
+
+            localStorage.setItem('fit15_user_profile', JSON.stringify(userProfile));
+
+            // Формула BMR Mifflin-St Jeor
+            if (userProfile.gender === 'male') {
+                bmr = (10 * userProfile.weight) + (6.25 * userProfile.height) - (5 * userProfile.age) + 5;
             } else {
-                clearInterval(timerInterval);
-                btn.textContent = 'Продолжить';
-                btn.style.backgroundColor = 'var(--tg-theme-button-color, #007aff)';
+                bmr = (10 * userProfile.weight) + (6.25 * userProfile.height) - (5 * userProfile.age) - 161;
+            }
+
+            document.getElementById('profileScreen').classList.add('hidden');
+            document.getElementById('setupScreen').classList.remove('hidden');
+        }
+
+        function selectLoad(level, mins, met, element) {
+            chosenLoad = level;
+            defaultMinutes = mins;
+            currentMet = met;
+            document.querySelectorAll('.load-card').forEach(c => c.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        function goToTimer() {
+            document.getElementById('setupScreen').classList.add('hidden');
+            document.getElementById('timerScreen').classList.remove('hidden');
+            document.getElementById('selectedLoadBadge').textContent = chosenLoad;
+            resetAll();
+        }
+
+        function switchMode(mode) {
+            if (isRunning) toggleRun();
+            currentMode = mode;
+            
+            document.getElementById('modeIntervalBtn').classList.toggle('active', mode === 'interval');
+            document.getElementById('modeTimerBtn').classList.toggle('active', mode === 'timer');
+            document.getElementById('modeStopwatchBtn').classList.toggle('active', mode === 'stopwatch');
+
+            document.getElementById('intervalSettings').classList.toggle('hidden', mode !== 'interval');
+            document.getElementById('timerSettings').classList.toggle('hidden', mode !== 'timer');
+
+            resetAll();
+        }
+
+        function selectScheme(work, rest, btn) {
+            if (isRunning) return;
+            workTime = work; restTime = rest;
+            document.querySelectorAll('#intervalSettings .opt-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            resetAll();
+        }
+
+        function changeRounds(delta) {
+            if (isRunning) return;
+            // Ограничение количества раундов от 2 до 20
+            totalRounds = Math.max(2, Math.min(20, totalRounds + delta));
+            document.getElementById('roundsCount').textContent = totalRounds;
+            resetAll();
+        }
+
+        function addMinutes(mins) {
+            if (isRunning || currentMode !== 'timer') return;
+            timerSeconds = Math.max(60, timerSeconds + mins * 60);
+            updateDisplay();
+        }
+
+        function updateCalories() {
+            const hours = elapsedWorkoutSeconds / 3600;
+            const burned = (bmr / 24) * currentMet * hours;
+            document.getElementById('caloriesCount').textContent = burned.toFixed(1);
+        }
+
+        function updateExerciseCard() {
+            if (geminiExercises.length === 0) return;
+            const currentEx = geminiExercises[currentExIndex];
+            document.getElementById('exerciseStep').textContent = `Упражнение ${currentExIndex + 1} из ${geminiExercises.length}`;
+            document.getElementById('exerciseName').textContent = currentEx ? currentEx.name : "Финиш!";
+        }
+
+        function updateDisplay() {
+            const display = document.getElementById('display');
+            const phaseTitle = document.getElementById('phaseTitle');
+            const body = document.body;
+
+            if (currentMode === 'interval') {
+                const s = String(intervalSeconds).padStart(2, '0');
+                display.textContent = `00:${s}`;
+                
+                const totalPhaseSeconds = isWorkPhase ? workTime : restTime;
+                const percent = (intervalSeconds / totalPhaseSeconds) * 100;
+                setProgress(percent);
+
+                if (!isRunning && currentRound === 1 && isWorkPhase && intervalSeconds === workTime) {
+                    phaseTitle.textContent = "ГОТОВ?";
+                    body.style.backgroundColor = "var(--bg-color)";
+                    document.documentElement.style.setProperty('--ring-color', 'var(--btn-color)');
+                } else if (isWorkPhase) {
+                    phaseTitle.textContent = `🔥 РАБОТА (${currentRound}/${totalRounds})`;
+                    body.style.backgroundColor = "var(--work-color)";
+                    document.documentElement.style.setProperty('--ring-color', '#ffffff');
+                } else {
+                    phaseTitle.textContent = `🧘 ОТДЫХ (${currentRound}/${totalRounds})`;
+                    body.style.backgroundColor = "var(--rest-color)";
+                    document.documentElement.style.setProperty('--ring-color', '#ffffff');
+                }
+            } else if (currentMode === 'timer') {
+                body.style.backgroundColor = "var(--bg-color)";
+                document.documentElement.style.setProperty('--ring-color', 'var(--btn-color)');
+                phaseTitle.textContent = "ТАЙМЕР";
+                const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+                const s = String(timerSeconds % 60).padStart(2, '0');
+                display.textContent = `${m}:${s}`;
+                setProgress((timerSeconds / (defaultMinutes * 60)) * 100);
+            } else {
+                body.style.backgroundColor = "var(--bg-color)";
+                document.documentElement.style.setProperty('--ring-color', '#ff9500');
+                phaseTitle.textContent = "СЕКУНДОМЕР";
+                const m = String(Math.floor(stopwatchTime / 60)).padStart(2, '0');
+                const s = String(stopwatchTime % 60).padStart(2, '0');
+                display.textContent = `${m}:${s}`;
+                setProgress((stopwatchTime % 60) / 60 * 100);
+            }
+
+            updateCalories();
+        }
+
+        function toggleRun() {
+            const btn = document.getElementById('startBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            if (!isRunning) {
+                isRunning = true;
+                btn.textContent = 'Пауза';
+                btn.style.backgroundColor = 'rgba(255,255,255,0.25)';
+                finishBtn.style.display = 'block';
+
+                interval = setInterval(() => {
+                    elapsedWorkoutSeconds++;
+
+                    if (currentMode === 'interval') {
+                        if (intervalSeconds > 1) {
+                            intervalSeconds--;
+                        } else {
+                            tg.HapticFeedback.notificationOccurred('warning');
+                            if (isWorkPhase) {
+                                isWorkPhase = false;
+                                intervalSeconds = restTime;
+                            } else {
+                                if (currentRound < totalRounds) {
+                                    currentRound++;
+                                    currentExIndex = currentRound - 1;
+                                    isWorkPhase = true;
+                                    intervalSeconds = workTime;
+                                    updateExerciseCard();
+                                } else {
+                                    clearInterval(interval);
+                                    isRunning = false;
+                                    btn.textContent = 'Старт';
+                                    btn.style.backgroundColor = 'var(--btn-color)';
+                                    tg.HapticFeedback.notificationOccurred('success');
+                                    alert("🎉 Все раунды пройдены! Отличная тренировка!");
+                                }
+                            }
+                        }
+                    } else if (currentMode === 'timer') {
+                        if (timerSeconds > 0) {
+                            timerSeconds--;
+                        } else {
+                            clearInterval(interval);
+                            isRunning = false;
+                            btn.textContent = 'Старт';
+                            btn.style.backgroundColor = 'var(--btn-color)';
+                            tg.HapticFeedback.notificationOccurred('success');
+                            alert("🔔 Время тренировки истекло!");
+                        }
+                    } else {
+                        stopwatchTime++;
+                    }
+
+                    updateDisplay();
+                }, 1000);
+
+            } else {
+                clearInterval(interval);
                 isRunning = false;
+                btn.textContent = 'Продолжить';
+                btn.style.backgroundColor = 'var(--btn-color)';
             }
         }
 
-        function resetTimer() {
-            clearInterval(timerInterval);
+        function resetAll() {
+            clearInterval(interval);
             isRunning = false;
-            elapsedTime = 0;
-            updateDisplay();
+            elapsedWorkoutSeconds = 0;
+            
+            currentRound = 1; currentExIndex = 0; isWorkPhase = true; intervalSeconds = workTime;
+            timerSeconds = defaultMinutes * 60; stopwatchTime = 0;
+            
+            document.body.style.backgroundColor = "var(--bg-color)";
             const btn = document.getElementById('startBtn');
             btn.textContent = 'Старт';
-            btn.style.backgroundColor = 'var(--tg-theme-button-color, #007aff)';
+            btn.style.backgroundColor = 'var(--btn-color)';
+            document.getElementById('finishBtn').style.display = 'none';
+            updateExerciseCard();
+            updateDisplay();
+        }
+
+        function finishWorkout() {
+            clearInterval(interval);
+            const burnedCalories = document.getElementById('caloriesCount').textContent;
+            
+            let details = "";
+            if (currentMode === 'interval') {
+                details = `Схема ${workTime}/${restTime} • Раунды: ${currentRound}/${totalRounds}`;
+            } else {
+                details = `Время: ${document.getElementById('display').textContent}`;
+            }
+
+            const data = {
+                mode: geminiExercises.length > 0 ? '🤖 Gemini AI Workout' : (currentMode === 'interval' ? '🔥 Интервалы (HIIT)' : '⏱️ Таймер/Секундомер'),
+                load: chosenLoad,
+                details: details,
+                calories: burnedCalories,
+                weight: userProfile.weight
+            };
+
+            tg.sendData(JSON.stringify(data));
         }
     </script>
 </body>
