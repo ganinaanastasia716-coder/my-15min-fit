@@ -376,6 +376,7 @@
         <div class="controls">
             <button id="startBtn" class="main-btn" onclick="toggleRun()">Старт</button>
             <button class="secondary-btn" onclick="resetAll()">Сбросить</button>
+            <button class="secondary-btn" style="background: rgba(255, 69, 58, 0.2); color: #ff453a;" onclick="exitWorkout()">← На главный экран</button>
             <button id="finishBtn" class="main-btn" style="background-color: #30d158; display: none;" onclick="finishWorkout()">✅ Завершить тренировку</button>
         </div>
     </div>
@@ -383,6 +384,58 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+
+        // --- ДВИЖОК ЗВУКОВ И ВИБРАЦИИ ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type = 'click') {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'phase') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(520, now);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'finish') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+
+            // Вибрация в Telegram
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
+        }
+
+        // Прикрепляем звук ко всем кнопкам
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('.load-card') || e.target.closest('button')) {
+                playSound('click');
+            }
+        });
 
         // Данные анкеты
         let userProfile = { gender: 'male', age: 25, weight: 70, height: 175 };
@@ -502,7 +555,6 @@
 
         function changeRounds(delta) {
             if (isRunning) return;
-            // Ограничение количества раундов от 2 до 20
             totalRounds = Math.max(2, Math.min(20, totalRounds + delta));
             document.getElementById('roundsCount').textContent = totalRounds;
             resetAll();
@@ -591,7 +643,7 @@
                         if (intervalSeconds > 1) {
                             intervalSeconds--;
                         } else {
-                            tg.HapticFeedback.notificationOccurred('warning');
+                            playSound('phase');
                             if (isWorkPhase) {
                                 isWorkPhase = false;
                                 intervalSeconds = restTime;
@@ -607,7 +659,7 @@
                                     isRunning = false;
                                     btn.textContent = 'Старт';
                                     btn.style.backgroundColor = 'var(--btn-color)';
-                                    tg.HapticFeedback.notificationOccurred('success');
+                                    playSound('finish');
                                     alert("🎉 Все раунды пройдены! Отличная тренировка!");
                                 }
                             }
@@ -620,7 +672,7 @@
                             isRunning = false;
                             btn.textContent = 'Старт';
                             btn.style.backgroundColor = 'var(--btn-color)';
-                            tg.HapticFeedback.notificationOccurred('success');
+                            playSound('finish');
                             alert("🔔 Время тренировки истекло!");
                         }
                     } else {
@@ -655,8 +707,19 @@
             updateDisplay();
         }
 
+        function exitWorkout() {
+            if (isRunning) {
+                const confirmExit = confirm("Тренировка идет! Вы уверены, что хотите выйти?");
+                if (!confirmExit) return;
+            }
+            resetAll();
+            document.getElementById('timerScreen').classList.add('hidden');
+            document.getElementById('setupScreen').classList.remove('hidden');
+        }
+
         function finishWorkout() {
             clearInterval(interval);
+            playSound('finish');
             const burnedCalories = document.getElementById('caloriesCount').textContent;
             
             let details = "";
