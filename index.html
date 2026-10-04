@@ -1,47 +1,124 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>15-Min Fit</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body { font-family: sans-serif; text-align: center; background: #121212; color: white; padding: 20px; }
-    .card { background: #1e1e1e; border-radius: 16px; padding: 20px; margin-top: 20px; }
-    img { width: 100%; max-width: 300px; border-radius: 12px; }
-    .timer { font-size: 48px; font-weight: bold; color: #00e676; margin: 15px 0; }
-    button { background: #0088cc; color: white; border: none; padding: 12px 24px; font-size: 18px; border-radius: 8px; cursor: pointer; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>15-Min Fit Секундомер</title>
+    <!-- Подключаем Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #1c1c1e);
+            color: var(--tg-theme-text-color, #ffffff);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .timer {
+            font-size: 64px;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            margin: 20px 0;
+            color: var(--tg-theme-button-color, #007aff);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: var(--tg-theme-button-color, #007aff);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            padding: 14px 28px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:active {
+            opacity: 0.8;
+        }
+
+        button.reset {
+            background-color: #ff3b30;
+        }
+    </style>
 </head>
 <body>
 
-  <h2>🌅 Зарядка за 15 минут</h2>
-  
-  <div class="card">
-    <img id="exercise-img" src="https://media.giphy.com/media/3o7TKsjLu9I5XwF2a4/giphy.gif" alt="Упражнение">
-    <h3 id="exercise-name">1. Мягкая разминка шеи</h3>
-    <div class="timer" id="timer">00:30</div>
-    <button onclick="startTimer()">▶ Запустить таймер</button>
-  </div>
+    <h1>⏱️ Секундомер тренировки</h1>
+    
+    <div class="timer" id="display">00:00.0</div>
 
-  <script>
-    let seconds = 30;
-    let timerRef;
+    <div class="controls">
+        <button id="startBtn" onclick="toggleTimer()">Старт</button>
+        <button class="reset" onclick="resetTimer()">Сброс</button>
+    </div>
 
-    function startTimer() {
-      clearInterval(timerRef);
-      seconds = 30;
-      document.getElementById('timer').innerText = "00:30";
-      
-      timerRef = setInterval(() => {
-        seconds--;
-        document.getElementById('timer').innerText = `00:${seconds < 10 ? '0' : ''}${seconds}`;
-        if (seconds <= 0) {
-          clearInterval(timerRef);
-          alert("✅ Отлично! Упражнение окончено!");
+    <script>
+        // Инициализация Telegram Mini App
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval = null;
+        let isRunning = false;
+
+        function updateDisplay() {
+            const time = new Date(elapsedTime);
+            const minutes = String(time.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(time.getUTCSeconds()).padStart(2, '0');
+            const milliseconds = String(Math.floor(time.getUTCMilliseconds() / 100));
+            document.getElementById('display').textContent = `${minutes}:${seconds}.${milliseconds}`;
         }
-      }, 1000);
-    }
-  </script>
+
+        function toggleTimer() {
+            const btn = document.getElementById('startBtn');
+            if (!isRunning) {
+                startTime = Date.now() - elapsedTime;
+                timerInterval = setInterval(() => {
+                    elapsedTime = Date.now() - startTime;
+                    updateDisplay();
+                }, 100);
+                btn.textContent = 'Пауза';
+                btn.style.backgroundColor = '#ff9500';
+                isRunning = true;
+            } else {
+                clearInterval(timerInterval);
+                btn.textContent = 'Продолжить';
+                btn.style.backgroundColor = 'var(--tg-theme-button-color, #007aff)';
+                isRunning = false;
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            elapsedTime = 0;
+            updateDisplay();
+            const btn = document.getElementById('startBtn');
+            btn.textContent = 'Старт';
+            btn.style.backgroundColor = 'var(--tg-theme-button-color, #007aff)';
+        }
+    </script>
 </body>
 </html>
