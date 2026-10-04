@@ -15,6 +15,7 @@
             --work-color: #ff453a;
             --rest-color: #30d158;
             --ring-color: #0a84ff;
+            --prep-color: #ff9500;
         }
 
         * { 
@@ -215,6 +216,33 @@
             font-size: 13px;
         }
 
+        /* ВЫБОР ПРЕДСТАРТА (3s / 5s / 10s) */
+        .prep-selector {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-bg);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .prep-pills { display: flex; gap: 4px; }
+        .prep-pill {
+            padding: 4px 8px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            font-weight: 700;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .prep-pill.active {
+            background: var(--prep-color);
+            color: #000;
+        }
+
         .adjust-btn {
             background: rgba(255,255,255,0.18);
             color: var(--text-color);
@@ -372,6 +400,16 @@
             </div>
         </div>
 
+        <!-- КНОПКА ВЫБОРА ПРЕДСТАРТА -->
+        <div class="prep-selector">
+            <span>⏱️ Отсчёт перед стартом:</span>
+            <div class="prep-pills">
+                <button class="prep-pill active" onclick="setPrepTime(3, this)">3 сек</button>
+                <button class="prep-pill" onclick="setPrepTime(5, this)">5 сек</button>
+                <button class="prep-pill" onclick="setPrepTime(10, this)">10 сек</button>
+            </div>
+        </div>
+
         <div class="controls">
             <button id="startBtn" class="main-btn" onclick="toggleRun()">Старт</button>
             <div style="display: flex; gap: 6px;">
@@ -391,10 +429,10 @@
         // --- ДВИЖОК ОЗВУЧКИ НА АНГЛИЙСКОМ ---
         function speakEnglish(text) {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Очищаем прошлые очереди
+                window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'en-US';
-                utterance.rate = 1.1; // Слегка ускоряем темп отсчета
+                utterance.rate = 1.1;
                 utterance.pitch = 1.0;
                 window.speechSynthesis.speak(utterance);
             }
@@ -457,6 +495,11 @@
         
         let workTime = 20, restTime = 10, totalRounds = 8, currentRound = 1;
         let isWorkPhase = true, intervalSeconds = 20;
+
+        // ПРЕДСТАРТ
+        let prepTimeChosen = 3;
+        let prepSecondsLeft = 3;
+        let isPrepPhase = false;
 
         let timerSeconds = 15 * 60, stopwatchTime = 0;
         let elapsedWorkoutSeconds = 0;
@@ -535,6 +578,14 @@
             resetAll();
         }
 
+        function setPrepTime(seconds, element) {
+            if (isRunning) return;
+            prepTimeChosen = seconds;
+            prepSecondsLeft = seconds;
+            document.querySelectorAll('.prep-pill').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+        }
+
         function switchMode(mode) {
             if (isRunning) toggleRun();
             currentMode = mode;
@@ -588,6 +639,16 @@
             const phaseTitle = document.getElementById('phaseTitle');
             const body = document.body;
 
+            // ФАЗА ПРИГОТОВЛЕНИЯ (ОТСЧЕТ 3/5/10 сек)
+            if (isPrepPhase) {
+                body.style.backgroundColor = "var(--prep-color)";
+                document.documentElement.style.setProperty('--ring-color', '#ffffff');
+                phaseTitle.textContent = "⏱️ ПРИГОТОВИТЬСЯ";
+                display.textContent = `00:${String(prepSecondsLeft).padStart(2, '0')}`;
+                setProgress((prepSecondsLeft / prepTimeChosen) * 100);
+                return;
+            }
+
             if (currentMode === 'interval') {
                 const s = String(intervalSeconds).padStart(2, '0');
                 display.textContent = `00:${s}`;
@@ -640,11 +701,35 @@
                 btn.style.backgroundColor = 'rgba(255,255,255,0.25)';
                 finishBtn.style.display = 'block';
 
+                // Если старт происходит в самом начале — запускаем подфазу Подготовки
+                if (currentRound === 1 && isWorkPhase && intervalSeconds === workTime && elapsedWorkoutSeconds === 0) {
+                    isPrepPhase = true;
+                    prepSecondsLeft = prepTimeChosen;
+                    speakEnglish(String(prepSecondsLeft));
+                }
+
                 interval = setInterval(() => {
+                    // ЕСЛИ ИДЕТ ФАЗА ПРИГОТОВЛЕНИЯ
+                    if (isPrepPhase) {
+                        if (prepSecondsLeft > 1) {
+                            prepSecondsLeft--;
+                            if (prepSecondsLeft <= 3) {
+                                speakEnglish(String(prepSecondsLeft));
+                            }
+                        } else {
+                            isPrepPhase = false;
+                            speakEnglish("Go!");
+                            playSound('phase');
+                        }
+                        updateDisplay();
+                        return;
+                    }
+
+                    // ОСНОВНОЙ ТАЙМЕР
                     elapsedWorkoutSeconds++;
 
                     if (currentMode === 'interval') {
-                        // Озвучка за 3 секунды до конца текущего этапа (3, 2, 1)
+                        // Озвучка за 3 секунды до смены фазы
                         if (intervalSeconds === 3) speakEnglish("Three");
                         if (intervalSeconds === 2) speakEnglish("Two");
                         if (intervalSeconds === 1) speakEnglish("One");
@@ -656,7 +741,7 @@
                             if (isWorkPhase) {
                                 isWorkPhase = false;
                                 intervalSeconds = restTime;
-                                speakEnglish("Rest"); // Предупреждение об отдыхе
+                                speakEnglish("Rest");
                             } else {
                                 if (currentRound < totalRounds) {
                                     currentRound++;
@@ -664,7 +749,7 @@
                                     isWorkPhase = true;
                                     intervalSeconds = workTime;
                                     updateExerciseCard();
-                                    speakEnglish("Go!"); // Голосовая команда к старту следующего упражнения
+                                    speakEnglish("Go!");
                                 } else {
                                     clearInterval(interval);
                                     isRunning = false;
@@ -711,9 +796,11 @@
         function resetAll() {
             clearInterval(interval);
             isRunning = false;
+            isPrepPhase = false;
             elapsedWorkoutSeconds = 0;
             window.speechSynthesis.cancel();
             
+            prepSecondsLeft = prepTimeChosen;
             currentRound = 1; currentExIndex = 0; isWorkPhase = true; intervalSeconds = workTime;
             timerSeconds = defaultMinutes * 60; stopwatchTime = 0;
             
