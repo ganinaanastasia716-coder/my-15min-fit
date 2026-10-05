@@ -145,232 +145,304 @@ def get_stats_by_period(user_id: str, days: int):
     }
 
 def calculate_streak(user_id: str, stats: dict):
-user_id_str = str(user_id)
-if user_id_str not in stats or not stats[user_id_str].get("workouts"):
-return 0, 0
-workouts = sorted(stats[user_id_str]["workouts"], key=lambda x: x["timestamp"])
-if not workouts:
-return 0, 0
-max_streak = 1
-current_streak = 1
-last_date = datetime.fromisoformat(workouts["timestamp"]).date()
-for i in range(1, len(workouts)):
-current_date = datetime.fromisoformat(workouts[i]["timestamp"]).date()
-diff = (current_date - last_date).days
-if diff == 1:
-current_streak += 1
-max_streak = max(max_streak, current_streak)
-elif diff > 1:
-current_streak = 1
-last_date = current_date
-today = datetime.now().date()
-recent_date = datetime.fromisoformat(workouts[-1]["timestamp"]).date()
-if (today - recent_date).days > 1:
-return 0, max_streak
-streak = 1
-cursor = today
-for item in reversed(workouts):
-item_date = datetime.fromisoformat(item["timestamp"]).date()
-if item_date == cursor:
-streak += 1
-cursor -= timedelta(days=1)
-elif (cursor - item_date).days == 1:
-streak += 1
-cursor = item_date
-else:
-break
-return streak - 1, max_streak
+    user_id_str = str(user_id)
+    if user_id_str not in stats or not stats[user_id_str].get("workouts"):
+        return 0, 0
+
+    workouts = sorted(stats[user_id_str]["workouts"], key=lambda x: x["timestamp"])
+    if not workouts:
+        return 0, 0
+
+    max_streak = 1
+    current_streak = 1
+
+    last_date = datetime.fromisoformat(workouts[0]["timestamp"]).date()
+    for i in range(1, len(workouts)):
+        current_date = datetime.fromisoformat(workouts[i]["timestamp"]).date()
+        diff = (current_date - last_date).days
+        if diff == 1:
+            current_streak += 1
+            max_streak = max(max_streak, current_streak)
+        elif diff > 1:
+            current_streak = 1
+        last_date = current_date
+
+    today = datetime.now().date()
+    recent_date = datetime.fromisoformat(workouts[-1]["timestamp"]).date()
+    if (today - recent_date).days > 1:
+        return 0, max_streak
+
+    streak = 1
+    cursor = today
+    for item in reversed(workouts):
+        item_date = datetime.fromisoformat(item["timestamp"]).date()
+        if item_date == cursor:
+            streak += 1
+            cursor -= timedelta(days=1)
+        elif (cursor - item_date).days == 1:
+            streak += 1
+            cursor = item_date
+        else:
+            break
+
+    return streak - 1, max_streak
+
 def record_workout(user_id: str, workout_data: dict):
-stats = load_stats()
-user_id_str = str(user_id)
-if user_id_str not in stats:
-stats[user_id_str] = {"total_workouts": 0, "total_calories": 0.0, "total_minutes": 0, "workouts": []}
-stats[user_id_str]["total_workouts"] += 1
-calories = float(workout_data.get("calories", 0))
-stats[user_id_str]["total_calories"] += calories
-details = workout_data.get("details", "")
-minutes = 15
-if "Схема " in details and "Раунды:" in details:
-try:
-scheme = details.split("Схема ").split(" •")
-work, rest = map(int, scheme.split("/"))
-rounds = int(details.split("Раунды: ").split("/"))
-minutes = max(15, rounds * (work + rest) // 60)
-except Exception:
-minutes = 15
-stats[user_id_str]["total_minutes"] += minutes
-workout_record = {
-"timestamp": datetime.now().isoformat(),
-"mode": workout_data.get("mode", ""),
-"load": workout_data.get("load", ""),
-"focus": workout_data.get("focus", ""),
-"details": details,
-"calories": calories,
-"minutes": minutes,
-"weight": workout_data.get("weight", "")
-}
-stats[user_id_str]["workouts"].append(workout_record)
-save_stats(stats)
---- ИНТЕРФЕЙС БОТА ---
+    stats = load_stats()
+    user_id_str = str(user_id)
+
+    if user_id_str not in stats:
+        stats[user_id_str] = {"total_workouts": 0, "total_calories": 0.0, "total_minutes": 0, "workouts": []}
+
+    stats[user_id_str]["total_workouts"] += 1
+    calories = float(workout_data.get("calories", 0))
+    stats[user_id_str]["total_calories"] += calories
+
+    details = workout_data.get("details", "")
+    minutes = 15
+
+    if "Схема " in details and "Раунды:" in details:
+        try:
+            scheme = details.split("Схема ")[1].split(" •")[0]
+            work, rest = map(int, scheme.split("/"))
+            rounds = int(details.split("Раунды: ")[1].split("/")[0])
+            minutes = max(15, rounds * (work + rest) // 60)
+        except Exception:
+            minutes = 15
+
+    stats[user_id_str]["total_minutes"] += minutes
+
+    workout_record = {
+        "timestamp": datetime.now().isoformat(),
+        "mode": workout_data.get("mode", ""),
+        "load": workout_data.get("load", ""),
+        "focus": workout_data.get("focus", ""),
+        "details": details,
+        "calories": calories,
+        "minutes": minutes,
+        "weight": workout_data.get("weight", "")
+    }
+
+    stats[user_id_str]["workouts"].append(workout_record)
+    save_stats(stats)
+
+# --- ИНТЕРФЕЙС БОТА ---
+
 WORKOUT_GOALS = {
-"Силовая": {"ru": "Силовая"},
-"Кардио": {"ru": "Кардио / Жиросжигание"},
-"Растяжка": {"ru": "Растяжка"},
-"Микс": {"ru": "Микс дня (Ganina AI)"}
+    "Силовая": {"ru": "Силовая"},
+    "Кардио": {"ru": "Кардио / Жиросжигание"},
+    "Растяжка": {"ru": "Растяжка"},
+    "Микс": {"ru": "Микс дня (Ganina AI)"}
 }
+
 FOCUS_ZONES = {
-"верх": {"emoji": "💪", "name": "Верх тела"},
-"ноги": {"emoji": "🦵", "name": "Ноги и ягодицы"},
-"пресс": {"emoji": "🔥", "name": "Пресс и кор"},
-"все": {"emoji": "🧘", "name": "Все тело"}
+    "верх": {"emoji": "💪", "name": "Верх тела"},
+    "ноги": {"emoji": "🦵", "name": "Ноги и ягодицы"},
+    "пресс": {"emoji": "🔥", "name": "Пресс и кор"},
+    "все": {"emoji": "🧘", "name": "Все тело"}
 }
+
 LOAD_LEVELS = {
-"🟢 Лёгкая": {"met": 3.5, "work_time": 20, "rest_time": 10, "rounds": 6},
-"🟡 Средняя": {"met": 6.0, "work_time": 20, "rest_time": 10, "rounds": 8},
-"🔴 Интенсивная": {"met": 8.5, "work_time": 30, "rest_time": 10, "rounds": 10}
+    "🟢 Лёгкая": {"met": 3.5, "work_time": 20, "rest_time": 10, "rounds": 6},
+    "🟡 Средняя": {"met": 6.0, "work_time": 20, "rest_time": 10, "rounds": 8},
+    "🔴 Интенсивная": {"met": 8.5, "work_time": 30, "rest_time": 10, "rounds": 10}
 }
+
 def get_main_keyboard():
-return InlineKeyboardMarkup(inline_keyboard=[
-[InlineKeyboardButton(text="🏋️ Силовая", callback_data="workout_Силовая")],
-[InlineKeyboardButton(text="🏃 Кардио / Жиросжигание", callback_data="workout_Кардио")],
-[InlineKeyboardButton(text="🧘 Растяжка", callback_data="workout_Растяжка")],
-[InlineKeyboardButton(text="🎲 Микс дня (Ganina AI)", callback_data="workout_Микс")],
-[InlineKeyboardButton(text="📊 Моя статистика", callback_data="stats_show")]
-])
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🏋️ Силовая", callback_data="workout_Силовая")],
+        [InlineKeyboardButton(text="🏃 Кардио / Жиросжигание", callback_data="workout_Кардио")],
+        [InlineKeyboardButton(text="🧘 Растяжка", callback_data="workout_Растяжка")],
+        [InlineKeyboardButton(text="🎲 Микс дня (Ganina AI)", callback_data="workout_Микс")],
+        [InlineKeyboardButton(text="📊 Моя статистика", callback_data="stats_show")]
+    ])
+
 @dp.message(CommandStart())
 async def start_cmd(message: types.Message):
-await message.answer(f"Привет, {message.from_user.first_name}! 👋\n\nКакую тренировку должна составить Ganina сегодня?", reply_markup=get_main_keyboard())
+    await message.answer(f"Привет, {message.from_user.first_name}! 👋\n\nКакую тренировку должна составить Ganina сегодня?", reply_markup=get_main_keyboard())
+
 @dp.message(Command("stats"))
 async def stats_cmd(message: types.Message):
-await show_user_stats(message.from_user.id, message)
+    await show_user_stats(message.from_user.id, message)
+
 async def show_user_stats(user_id: int, message_context):
-stats = load_stats()
-user_id_str = str(user_id)
-if user_id_str not in stats or stats[user_id_str]["total_workouts"] == 0:
-text = "📊 У вас еще нет завершенных тренировок.\n\nСоздайте первую тренировку прямо сейчас! 💪"
-keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🏋️ Создать тренировку", callback_data="workout_Микс")]])
-else:
-user_stats = stats[user_id_str]
-text = (
-f"📊 ПОЛНАЯ СТАТИСТИКА\n\n📈 ВСЕГО:\n"
-f"   💪 Тренировок: {user_stats['total_workouts']}\n"
-f"   🔥 Сожжено ккал: {user_stats['total_calories']:.0f}\n"
-f"   ⏱️  В работе: {user_stats.get('total_minutes', 0)} минут\n\n"
-f"📅 ЗА НЕДЕЛЮ: {get_stats_by_period(user_id, 7)['workouts']} зан. | {get_stats_by_period(user_id, 7)['calories']:.0f} ккал\n"
-f"📆 ЗА МЕСЯЦ: {get_stats_by_period(user_id, 30)['workouts']} зан. | {get_stats_by_period(user_id, 30)['calories']:.0f} ккал\n\n"
-f"🔥 STREAK: {calculate_streak(user_id, stats)[0]} дней подряд! (Рекорд: {calculate_streak(user_id, stats)[1]})"
-)
-keyboard = InlineKeyboardMarkup(inline_keyboard=[
-[InlineKeyboardButton(text="🔄 Обновить", callback_data="stats_show")],
-[InlineKeyboardButton(text="🏋️ Новая тренировка", callback_data="workout_Микс")]
-])
-if isinstance(message_context, types.CallbackQuery):
-await message_context.message.answer(text, reply_markup=keyboard)
-else:
-await message_context.answer(text, reply_markup=keyboard)
+    stats = load_stats()
+    user_id_str = str(user_id)
+
+    if user_id_str not in stats or stats[user_id_str]["total_workouts"] == 0:
+        text = "📊 У вас еще нет завершенных тренировок.\n\nСоздайте первую тренировку прямо сейчас! 💪"
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🏋️ Создать тренировку", callback_data="workout_Микс")]])
+    else:
+        user_stats = stats[user_id_str]
+        streak_data = calculate_streak(user_id, stats)
+        text = (
+            f"📊 ПОЛНАЯ СТАТИСТИКА\n\n"
+            f"📈 ВСЕГО:\n"
+            f"   💪 Тренировок: {user_stats['total_workouts']}\n"
+            f"   🔥 Сожжено ккал: {user_stats['total_calories']:.0f}\n"
+            f"   ⏱️  В работе: {user_stats.get('total_minutes', 0)} минут\n\n"
+            f"📅 ЗА НЕДЕЛЮ: {get_stats_by_period(user_id, 7)['workouts']} зан. | {get_stats_by_period(user_id, 7)['calories']:.0f} ккал\n"
+            f"📆 ЗА МЕСЯЦ: {get_stats_by_period(user_id, 30)['workouts']} зан. | {get_stats_by_period(user_id, 30)['calories']:.0f} ккал\n\n"
+            f"🔥 STREAK: {streak_data[0]} дней подряд! (Рекорд: {streak_data[1]})"
+        )
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🔄 Обновить", callback_data="stats_show")],
+            [InlineKeyboardButton(text="🏋️ Новая тренировка", callback_data="workout_Микс")]
+        ])
+
+    if isinstance(message_context, types.CallbackQuery):
+        await message_context.message.answer(text, reply_markup=keyboard)
+    else:
+        await message_context.answer(text, reply_markup=keyboard)
+
 @dp.callback_query(F.data == "stats_show")
 async def stats_callback(callback: types.CallbackQuery):
-await show_user_stats(callback.from_user.id, callback)
-await callback.answer()
+    await show_user_stats(callback.from_user.id, callback)
+    await callback.answer()
+
 @dp.callback_query(F.data.startswith("workout_"))
 async def select_workout_type(callback: types.CallbackQuery):
-goal = callback.data.split("", 1)
-focus_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-[InlineKeyboardButton(text="💪 Верх тела", callback_data=f"focus{goal}верх")],
-[InlineKeyboardButton(text="🦵 Ноги и ягодицы", callback_data=f"focus{goal}ноги")],
-[InlineKeyboardButton(text="🔥 Пресс и кор", callback_data=f"focus{goal}пресс")],
-[InlineKeyboardButton(text="🧘 Все тело", callback_data=f"focus{goal}_все")],
-[InlineKeyboardButton(text="← Назад", callback_data="back_to_workout_menu")]
-])
-await callback.message.edit_text(f"✨ Вы выбрали: {WORKOUT_GOALS.get(goal, {}).get('ru', goal)}\n\nНа какую зону сосредоточиться?", reply_markup=focus_keyboard)
-await callback.answer()
+    goal = callback.data.split("_", 1)[1] # ИСПРАВЛЕНО: разделитель "_" вместо ""
+    focus_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="💪 Верх тела", callback_data=f"focus_{goal}_верх")],
+        [InlineKeyboardButton(text="🦵 Ноги и ягодицы", callback_data=f"focus_{goal}_ноги")],
+        [InlineKeyboardButton(text="🔥 Пресс и кор", callback_data=f"focus_{goal}_пресс")],
+        [InlineKeyboardButton(text="🧘 Все тело", callback_data=f"focus_{goal}_все")],
+        [InlineKeyboardButton(text="← Назад", callback_data="back_to_workout_menu")]
+    ])
+    goal_name = WORKOUT_GOALS.get(goal, {}).get("ru", goal)
+    await callback.message.edit_text(f"✨ Вы выбрали: {goal_name}\n\nНа какую зону сосредоточиться?", reply_markup=focus_keyboard)
+    await callback.answer()
+
 @dp.callback_query(F.data.startswith("focus_"))
 async def select_focus_zone(callback: types.CallbackQuery):
-parts = callback.data.split("", 2)
-goal, focus_zone = parts, parts
-intensity_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-[InlineKeyboardButton(text="🟢 Лёгкая", callback_data=f"intensity{goal}{focus_zone}🟢 Лёгкая")],
-[InlineKeyboardButton(text="🟡 Средняя", callback_data=f"intensity_{goal}{focus_zone}🟡 Средняя")],
-[InlineKeyboardButton(text="🔴 Интенсивная", callback_data=f"intensity_{goal}{focus_zone}🔴 Интенсивная")],
-[InlineKeyboardButton(text="← Назад", callback_data=f"back_to_focus_{goal}")]
-])
-await callback.message.edit_text(f"🎯 Фокус: {FOCUS_ZONES.get(focus_zone, {}).get('name')}\n\nВыберите уровень интенсивности:", reply_markup=intensity_keyboard)
-await callback.answer()
+    parts = callback.data.split("_", 2) # ИСПРАВЛЕНО: разделитель "_" вместо ""
+    goal = parts[1]
+    focus_zone = parts[2]
+    
+    intensity_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🟢 Лёгкая", callback_data=f"intensity_{goal}_{focus_zone}_🟢 Лёгкая")],
+        [InlineKeyboardButton(text="🟡 Средняя", callback_data=f"intensity_{goal}_{focus_zone}_🟡 Средняя")],
+        [InlineKeyboardButton(text="🔴 Интенсивная", callback_data=f"intensity_{goal}_{focus_zone}_🔴 Интенсивная")],
+        [InlineKeyboardButton(text="← Назад", callback_data=f"back_to_focus_{goal}")]
+    ])
+    focus_name = FOCUS_ZONES.get(focus_zone, {}).get("name", focus_zone)
+    await callback.message.edit_text(f"🎯 Фокус: {focus_name}\n\nВыберите уровень интенсивности:", reply_markup=intensity_keyboard)
+    await callback.answer()
+
 @dp.callback_query(F.data.startswith("intensity_"))
 async def select_intensity(callback: types.CallbackQuery):
-parts = callback.data.split("")
-goal, focus_zone = parts, parts
-load_level = "".join(parts[3:])
-await callback.message.edit_text(f"⏳ Сборка персонального плана тренировки...")
-pool = EXERCISES_DATABASE.get(goal, EXERCISES_DATABASE["Микс"]).get(focus_zone, EXERCISES_DATABASE["Микс"]["все"])
-# Из обширного списка случайным образом вытаскиваются ровно 5 уникальных упражнений
-exercises = random.sample(pool, k=min(5, len(pool)))
-encoded_exercises = urllib.parse.quote(json.dumps(exercises, ensure_ascii=False))
-load_info = LOAD_LEVELS.get(load_level, LOAD_LEVELS["🟡 Средняя"])
-params = {
-"workout": encoded_exercises, "load": load_level, "focus": focus_zone,
-"work_time": load_info["work_time"], "rest_time": load_info["rest_time"],
-"rounds": load_info["rounds"], "met": load_info["met"]
-}
-web_app_url = f"{WEB_APP_BASE_URL}?{urllib.parse.urlencode(params)}"
-keyboard = InlineKeyboardMarkup(inline_keyboard=[
-[InlineKeyboardButton(text="🚀 Начать тренировку", web_app=WebAppInfo(url=web_app_url))],
-[InlineKeyboardButton(text="📊 Моя статистика", callback_data="stats_show")],
-[InlineKeyboardButton(text="← Назад", callback_data=f"back_to_intensity_{goal}_{focus_zone}")]
-])
-workout_text = "\n".join([f"{i+1}. {ex['name']}" for i, ex in enumerate(exercises)])
-await callback.message.answer(
-f"📋 Ваш случайный план:\n\n"
-f"Тип: {WORKOUT_GOALS.get(goal, {}).get('ru', goal)} • {FOCUS_ZONES.get(focus_zone, {}).get('name')}\n"
-f"Интенсивность: {load_level}\n\n"
-f"Упражнения:\n{workout_text}\n\n"
-f"Нажмите кнопку ниже, чтобы открыть таймер!", reply_markup=keyboard
-)
-await callback.answer()
+    parts = callback.data.split("_") # ИСПРАВЛЕНО: разделитель "_" вместо ""
+    goal = parts[1]
+    focus_zone = parts[2]
+    load_level = "_".join(parts[3:])
+    
+    await callback.message.edit_text(f"⏳ Сборка персонального плана тренировки...")
+    
+    # 1. Сначала подготавливаем пул упражнений и перемешиваем их
+    pool = EXERCISES_DATABASE.get(goal, EXERCISES_DATABASE["Микс"]).get(focus_zone, EXERCISES_DATABASE["Микс"]["все"])
+    exercises = random.sample(pool, k=min(5, len(pool)))
+    
+    # 2. Формируем ссылки и параметры для Mini App
+    encoded_exercises = urllib.parse.quote(json.dumps(exercises, ensure_ascii=False))
+    load_info = LOAD_LEVELS.get(load_level, LOAD_LEVELS["🟡 Средняя"])
+    
+    params = {
+        "workout": encoded_exercises, 
+        "load": load_level, 
+        "focus": focus_zone,
+        "work_time": load_info["work_time"], 
+        "rest_time": load_info["rest_time"],
+        "rounds": load_info["rounds"], 
+        "met": load_info["met"]
+    }
+    
+    web_app_url = f"{WEB_APP_BASE_URL}?{urllib.parse.urlencode(params)}"
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🚀 Начать тренировку", web_app=WebAppInfo(url=web_app_url))],
+        [InlineKeyboardButton(text="📊 Моя статистика", callback_data="stats_show")],
+        [InlineKeyboardButton(text="← Назад", callback_data=f"back_to_intensity_{goal}_{focus_zone}")]
+    ])
+    
+    # 🔥 КРИТИЧЕСКИЙ ФИКС: Сначала создаем переменную workout_text!
+    workout_text = "\n".join([f"{i+1}. {ex['name']}" for i, ex in enumerate(exercises)])
+    
+    goal_name = WORKOUT_GOALS.get(goal, {}).get("ru", goal)
+    focus_name = FOCUS_ZONES.get(focus_zone, {}).get("name", focus_zone)
+    
+    # 3. И только теперь отправляем готовое сообщение в чат
+    await callback.message.answer(
+        f"📋 **Ваш случайный план:**\n\n"
+        f"**Тип:** {goal_name} • {focus_name}\n"
+        f"**Интенсивность:** {load_level}\n\n"
+        f"**Упражнения:**\n{workout_text}\n\n"
+        f"Нажмите кнопку ниже, чтобы открыть таймер!", 
+        reply_markup=keyboard
+    )
+    await callback.answer()
+
 @dp.message(F.web_app_data)
 async def handle_web_app_data(message: types.Message):
-try:
-data = json.loads(message.web_app_data.data)
-record_workout(message.from_user.id, data)
-current_streak, max_streak = calculate_streak(message.from_user.id, load_stats())
-await message.answer(
-f"🎉 Отличная работа! Тренировка завершена!\n\n📌 Режим: {data.get('mode', 'Тренировка')}\n"
-f"💪 Уровень: {data.get('load', '🟡 Средняя')} • {data.get('focus', 'все')}\n"
-f"🔥 Сожжено калорий: {float(data.get('calories', 0)):.0f} ккал\n\n"
-f"🔥 Серия (Streak): {current_streak} дней подряд! (Рекорд: {max_streak} дней) 🏆\n\n"
-f"Результаты сохранены в статистику! 📈", reply_markup=get_main_keyboard()
-)
-except Exception as e:
-await message.answer("❌ Ошибка при записи результатов.", reply_markup=get_main_keyboard())
---- НАВИГАЦИЯ НАЗАД ---
+    try:
+        data = json.loads(message.web_app_data.data)
+        record_workout(message.from_user.id, data)
+        current_streak, max_streak = calculate_streak(message.from_user.id, load_stats())
+        
+        await message.answer(
+            f"🎉 **Отличная работа! Тренировка завершена!**\n\n"
+            f"📌 **Режим:** {data.get('mode', 'Тренировка')}\n"
+            f"💪 **Уровень:** {data.get('load', '🟡 Средняя')} • {data.get('focus', 'все')}\n"
+            f"🔥 **Сожжено калорий:** {float(data.get('calories', 0)):.0f} ккал\n\n"
+            f"🔥 **Серия (Streak):** {current_streak} дней подряд! (Рекорд: {max_streak} дней) 🏆\n\n"
+            f"Результаты сохранены в статистику! 📈", 
+            reply_markup=get_main_keyboard()
+        )
+    except Exception as e:
+        print(f"Ошибка сохранения: {e}")
+        await message.answer("❌ Ошибка при записи результатов.", reply_markup=get_main_keyboard())
+
+# --- НАВИГАЦИЯ НАЗАД ---
+
 @dp.callback_query(F.data == "back_to_workout_menu")
 async def back_menu(callback: types.CallbackQuery):
-await callback.message.edit_text("Какую тренировку должна составить Ganina сегодня?", reply_markup=get_main_keyboard())
-await callback.answer()
+    await callback.message.edit_text("Какую тренировку должна составить Ganina сегодня?", reply_markup=get_main_keyboard())
+    await callback.answer()
+
 @dp.callback_query(F.data.startswith("back_to_focus_"))
 async def back_focus(callback: types.CallbackQuery):
-goal = callback.data.split("")[-1]
-focus_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-[InlineKeyboardButton(text="💪 Верх", callback_data=f"focus{goal}верх")], [InlineKeyboardButton(text="🦵 Ноги", callback_data=f"focus{goal}ноги")],
-[InlineKeyboardButton(text="🔥 Пресс", callback_data=f"focus{goal}пресс")], [InlineKeyboardButton(text="🧘 Все тело", callback_data=f"focus{goal}_все")],
-[InlineKeyboardButton(text="← Назад", callback_data="back_to_workout_menu")]
-])
-await callback.message.edit_text("На какую зону сосредоточиться?", reply_markup=focus_keyboard)
-await callback.answer()
+    goal = callback.data.split("_")[-1] # ИСПРАВЛЕНО: разделитель "_" вместо ""
+    
+    focus_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="💪 Верх", callback_data=f"focus_{goal}_верх")],
+        [InlineKeyboardButton(text="🦵 Ноги", callback_data=f"focus_{goal}_ноги")],
+        [InlineKeyboardButton(text="🔥 Пресс", callback_data=f"focus_{goal}_пресс")],
+        [InlineKeyboardButton(text="🧘 Все тело", callback_data=f"focus_{goal}_все")],
+        [InlineKeyboardButton(text="← Назад", callback_data="back_to_workout_menu")]
+    ]) # ИСПРАВЛЕНО: возвращены корректные нижние подчеркивания в callback_data
+    
+    await callback.message.edit_text("На какую зону сосредоточиться?", reply_markup=focus_keyboard)
+    await callback.answer()
+
 @dp.callback_query(F.data.startswith("back_to_intensity_"))
 async def back_intensity(callback: types.CallbackQuery):
-parts = callback.data.split("")
-goal, focus_zone = parts, parts
-intensity_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-[InlineKeyboardButton(text="🟢 Лёгкая", callback_data=f"intensity{goal}{focus_zone}🟢 Лёгкая")],
-[InlineKeyboardButton(text="🟡 Средняя", callback_data=f"intensity_{goal}{focus_zone}🟡 Средняя")],
-[InlineKeyboardButton(text="🔴 Интенсивная", callback_data=f"intensity_{goal}{focus_zone}🔴 Интенсивная")],
-[InlineKeyboardButton(text="← Назад", callback_data=f"back_to_focus_{goal}")]
-])
-await callback.message.edit_text("Выберите уровень интенсивности:", reply_markup=intensity_keyboard)
-await callback.answer()
+    parts = callback.data.split("_") # ИСПРАВЛЕНО: разделитель "_" вместо ""
+    goal = parts[3]
+    focus_zone = parts[4]
+    
+    intensity_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🟢 Лёгкая", callback_data=f"intensity_{goal}_{focus_zone}_🟢 Лёгкая")],
+        [InlineKeyboardButton(text="🟡 Средняя", callback_data=f"intensity_{goal}_{focus_zone}_🟡 Средняя")],
+        [InlineKeyboardButton(text="🔴 Интенсивная", callback_data=f"intensity_{goal}_{focus_zone}_🔴 Интенсивная")],
+        [InlineKeyboardButton(text="← Назад", callback_data=f"back_to_focus_{goal}")]
+    ]) # ИСПРАВЛЕНО: возвращены корректные нижние подчеркивания в callback_data
+    
+    await callback.message.edit_text("Выберите уровень интенсивности:", reply_markup=intensity_keyboard)
+    await callback.answer()
+
 async def main():
-print("🤖 Бот запущен с расширенной локальной БД упражнений...")
-await dp.start_polling(bot)
-if name == "main":
-asyncio.run(main())
+    print("🤖 Бот запущен на стабильной локальной базе упражнений...")
+    await dp.start_polling(bot)
+
+if __name__ == "__main__": # ИСПРАВЛЕНО: __name__ и __main__ с двойными подчеркиваниями
+    asyncio.run(main())
