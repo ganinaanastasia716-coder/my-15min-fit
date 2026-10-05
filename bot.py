@@ -231,7 +231,7 @@ def get_stats_by_period(user_id: str, days: int):
     return {
         "workouts": len(filtered),
         "calories": sum(float(w.get("calories", 0)) for w in filtered),
-        "minutes": sum(int(w.get("minutes", 15)) for w in filtered)
+        "minutes": sum(float(w.get("minutes", 0)) for w in filtered)
     }
 
 def calculate_streak(user_id: str, stats: dict):
@@ -280,49 +280,154 @@ def calculate_streak(user_id: str, stats: dict):
 
     return streak - 1, max_streak
 
+def _number(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _duration_seconds(workout_data: dict):
+    for key in ("duration_seconds", "elapsed_seconds", "seconds"):
+        value = _number(workout_data.get(key), -1)
+        if value >= 0:
+            return int(round(value)), "actual"
+
+    for key in ("duration_minutes", "elapsed_minutes", "minutes"):
+        value = _number(workout_data.get(key), -1)
+        if value >= 0:
+            return int(round(value * 60)), "actual"
+
+    return 0, "unknown"
+
+
+def register_user(user: types.User):
+    stats = load_stats()
+    uid = str(user.id)
+    user_data = stats.setdefault(uid, {
+        "total_workouts": 0,
+        "total_calories": 0.0,
+        "total_minutes": 0.0,
+        "workouts": [],
+        "last_workout_at": None,
+        "reminders_sent": [],
+        "first_name": user.first_name or "",
+        "username": user.username or ""
+    })
+    user_data.setdefault("total_workouts", 0)
+    user_data.setdefault("total_calories", 0.0)
+    user_data.setdefault("total_minutes", 0.0)
+    user_data.setdefault("workouts", [])
+    user_data.setdefault("last_workout_at", None)
+    user_data.setdefault("reminders_sent", [])
+    user_data["first_name"] = user.first_name or user_data.get("first_name", "")
+    user_data["username"] = user.username or user_data.get("username", "")
+    save_stats(stats)
+
+
 def record_workout(user_id: str, workout_data: dict):
     stats = load_stats()
-    user_id_str = str(user_id)
+    uid = str(user_id)
+    user_data = stats.setdefault(uid, {
+        "total_workouts": 0, "total_calories": 0.0, "total_minutes": 0.0,
+        "workouts": [], "last_workout_at": None, "reminders_sent": []
+    })
+    user_data.setdefault("workouts", [])
+    user_data.setdefault("reminders_sent", [])
 
-    if user_id_str not in stats:
-        stats[user_id_str] = {
-            "total_workouts": 0, 
-            "total_calories": 0.0, 
-            "total_minutes": 0, 
-            "workouts": []
-        }
+    now = datetime.now().isoformat()
+    calories = _number(workout_data.get("calories"), 0.0)
+    duration_seconds, duration_source = _duration_seconds(workout_data)
+    minutes = round(duration_seconds / 60, 2)
 
-    stats[user_id_str]["total_workouts"] += 1
-    calories = float(workout_data.get("calories", 0))
-    stats[user_id_str]["total_calories"] += calories
-
-    details = workout_data.get("details", "")
-    minutes = 15
-
-    if "Схема " in details and "Раунды:" in details:
-        try:
-            scheme = details.split("Схема ")[1].split(" •")[0]
-            work, rest = map(int, scheme.split("/"))
-            rounds = int(details.split("Раунды: ")[1].split("/")[0])
-            minutes = max(15, rounds * (work + rest) // 60)
-        except Exception:
-            minutes = 15
-
-    stats[user_id_str]["total_minutes"] += minutes
-
-    workout_record = {
-        "timestamp": datetime.now().isoformat(),
+    record = {
+        "timestamp": now,
+        "action": workout_data.get("action", "workout_finished"),
+        "workout_type": workout_data.get("workout_type", workout_data.get("mode", "Тренировка")),
         "mode": workout_data.get("mode", ""),
         "load": workout_data.get("load", ""),
         "focus": workout_data.get("focus", ""),
-        "details": details,
+        "duration_seconds": duration_seconds,
+        "formatted_time": workout_data.get("formatted_time", ""),
+        "duration_source": duration_source,
         "calories": calories,
-        "minutes": minutes,
-        "weight": workout_data.get("weight", "")
+        "weight": workout_data.get("weight", ""),
+        "age": workout_data.get("age", ""),
+        "gender": workout_data.get("gender", ""),
+        "height": workout_data.get("height", ""),
+        "rounds_completed": workout_data.get("rounds_completed", 0),
+        "total_rounds": workout_data.get("total_rounds", 0),
+        "work_time": workout_data.get("work_time", 0),
+        "rest_time": workout_data.get("rest_time", 0),
+        "exercises": workout_data.get("exercises", []),
+        "date": workout_data.get("date", now)
     }
 
-    stats[user_id_str]["workouts"].append(workout_record)
+    user_data["total_workouts"] = int(user_data.get("total_workouts", 0)) + 1
+    user_data["total_calories"] = _number(user_data.get("total_calories"), 0) + calories
+    user_data["total_minutes"] = _number(user_data.get("total_minutes"), 0) + minutes
+    user_data["last_workout_at"] = now
+    user_data["reminders_sent"] = []
+    user_data["workouts"].append(record)
     save_stats(stats)
+    return record
+
+
+REMINDER_DAYS = (3, 7, 14, 30)
+REMINDER_INTERVAL = 60 * 60
+
+def _last_workout(user_data):
+    if user_data.get("last_workout_at"):
+        return user_data["last_workout_at"]
+    workouts = user_data.get("workouts", [])
+    dates = [w.get("timestamp") for w in workouts if w.get("timestamp")]
+    return max(dates) if dates else None
+
+
+def _reminder_text(days, first_name):
+    name = f", {first_name}" if first_name else ""
+    texts = {
+        3: f"👋 {name} уже 3 дня без тренировки.\n\nСамое время вернуться к плану 💪 Сделаем тренировку сегодня?",
+        7: f"📅 {name} уже неделя без тренировки.\n\nНе теряем ритм — даже короткая тренировка лучше паузы. 🔥",
+        14: f"⚠️ {name} уже 14 дней без тренировки.\n\nДавай мягко вернёмся в режим. Я могу составить тренировку прямо сейчас.",
+        30: f"⏰ {name} уже 30 дней без тренировки.\n\nПора возвращаться! Начнём с подходящей нагрузки и без перегруза. 💪"
+    }
+    return texts[days]
+
+
+async def reminder_loop():
+    while True:
+        try:
+            stats = load_stats()
+            changed = False
+            now = datetime.now()
+            for uid, user_data in stats.items():
+                last = _last_workout(user_data)
+                if not last:
+                    continue
+                try:
+                    last_dt = datetime.fromisoformat(last)
+                except (TypeError, ValueError):
+                    continue
+                days = (now - last_dt).days
+                sent = set(user_data.get("reminders_sent", []))
+                due = [d for d in REMINDER_DAYS if days >= d and d not in sent]
+                if not due:
+                    continue
+                # Отправляем только самое актуальное напоминание, если бот был офлайн.
+                day = max(due)
+                try:
+                    await bot.send_message(int(uid), _reminder_text(day, user_data.get("first_name", "")), reply_markup=get_main_keyboard())
+                    user_data.setdefault("reminders_sent", []).extend(due)
+                    changed = True
+                except Exception as e:
+                    print(f"Reminder error for {uid}: {e}")
+            if changed:
+                save_stats(stats)
+        except Exception as e:
+            print(f"Reminder loop error: {e}")
+        await asyncio.sleep(REMINDER_INTERVAL)
+
 # --- ⚙️ НАСТРОЙКИ КЛАВИАТУР И КОНФИГУРАЦИИ ---
 
 WORKOUT_GOALS = {
@@ -361,6 +466,7 @@ def get_main_keyboard():
 
 @dp.message(CommandStart())
 async def start_cmd(message: types.Message):
+    register_user(message.from_user)
     await message.answer(
         f"Привет, {message.from_user.first_name}! 👋\n\n"
         f"Какую тренировку должна составить Ganina сегодня?", 
@@ -490,6 +596,7 @@ async def select_intensity(callback: types.CallbackQuery):
     
     params = {
         "workout": encoded_exercises,
+        "workout_type": goal,
         "load": load_level,
         "focus": focus_zone,
         "work_time": load_info["work_time"],
@@ -528,27 +635,29 @@ async def select_intensity(callback: types.CallbackQuery):
 async def handle_web_app_data(message: types.Message):
     try:
         data = json.loads(message.web_app_data.data)
-        record_workout(message.from_user.id, data)
-        current_streak, max_streak = calculate_streak(
-            message.from_user.id, 
-            load_stats()
-        )
-        
+        record = record_workout(message.from_user.id, data)
+        current_streak, max_streak = calculate_streak(message.from_user.id, load_stats())
+
+        seconds = int(record.get("duration_seconds", 0))
+        mins, secs = divmod(seconds, 60)
+        duration = f"{mins} мин" + (f" {secs} сек" if secs else "") if mins else f"{secs} сек"
+
         await message.answer(
-            f"🎉 **Отличная работа! Тренировка завершена!**\n\n"
-            f"📌 **Режим:** {data.get('mode', 'Тренировка')}\n"
-            f"💪 **Уровень:** {data.get('load', '🟡 Средняя')} • {data.get('focus', 'все')}\n"
-            f"🔥 **Сожжено калорий:** {float(data.get('calories', 0)):.0f} ккал\n\n"
-            f"🔥 **Серия (Streak):** {current_streak} дней подряд! (Рекорд: {max_streak} дней) 🏆\n\n"
-            f"Результаты сохранены в статистику! 📈",
+            f"🎉 **Тренировка завершена!**\n\n"
+            f"🏋️ **Тип:** {record.get('workout_type', 'Тренировка')}\n"
+            f"📌 **Режим:** {record.get('mode', '—')}\n"
+            f"💪 **Нагрузка:** {record.get('load', '—')}\n"
+            f"🎯 **Фокус:** {record.get('focus', '—')}\n"
+            f"⏱️ **Время:** {duration}\n"
+            f"🔥 **Калории:** {record.get('calories', 0):.1f} ккал\n"
+            f"🔄 **Раунды:** {record.get('rounds_completed', '—')} / {record.get('total_rounds', '—')}\n\n"
+            f"🔥 **Серия:** {current_streak} дней (рекорд {max_streak}) 🏆\n\n"
+            f"📈 Все показатели сохранены в статистику!",
             reply_markup=get_main_keyboard()
         )
     except Exception as e:
         print(f"Ошибка сохранения: {e}")
-        await message.answer(
-            "❌ Ошибка при записи результатов.", 
-            reply_markup=get_main_keyboard()
-        )
+        await message.answer("❌ Ошибка при записи результатов.", reply_markup=get_main_keyboard())
 
 # --- 🔄 НАВИГАЦИЯ НАЗАД ---
 
@@ -600,8 +709,17 @@ async def back_intensity(callback: types.CallbackQuery):
 # --- 🚩 ТОЧКА ВХОДА ЗАПУСКА ---
 
 async def main():
-    print("🤖 Бот запущен на стабильной локальной базе упражнений...")
-    await dp.start_polling(bot)
+    print("🤖 Бот запущен...")
+    reminder_task = asyncio.create_task(reminder_loop())
+    try:
+        await dp.start_polling(bot)
+    finally:
+        reminder_task.cancel()
+        try:
+            await reminder_task
+        except asyncio.CancelledError:
+            pass
+        await bot.session.close()
 
 if __name__ == "__main__":
     asyncio.run(main())
