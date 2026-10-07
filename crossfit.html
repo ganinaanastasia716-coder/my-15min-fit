@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ganina Fit — CrossFit</title>
+<style>
+:root{
+  --bg:#090a0f;--panel:#12141c;--panel2:#181b25;--text:#f7f7fb;--muted:#969baa;
+  --accent:#ff5b2d;--accent2:#ffb000;--line:#292d38;--ok:#8df07b;
+}
+*{box-sizing:border-box} body{margin:0;background:
+radial-gradient(circle at 85% 5%,rgba(255,91,45,.22),transparent 30%),
+radial-gradient(circle at 10% 80%,rgba(255,176,0,.10),transparent 28%),var(--bg);
+color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{width:min(760px,100%);margin:auto;padding:18px 16px 30px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.brand{font-weight:900;letter-spacing:.08em;font-size:12px;color:#fff}.brand span{color:var(--accent)}
+.badge{border:1px solid var(--line);background:#11131a;padding:8px 11px;border-radius:999px;font-size:11px;color:#c5c8d0}
+.hero{border:1px solid #343844;border-radius:28px;padding:22px;background:
+linear-gradient(145deg,rgba(255,91,45,.18),rgba(255,176,0,.04) 45%,rgba(255,255,255,.025));
+box-shadow:0 20px 70px rgba(0,0,0,.35)}
+.kicker{font-size:11px;letter-spacing:.18em;color:#ffb68f;font-weight:800}.title{font-size:38px;line-height:.95;margin:8px 0 10px;font-weight:950}.title em{font-style:normal;color:var(--accent)}
+.subtitle{color:#aeb2bc;font-size:14px;line-height:1.5;max-width:580px}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+.mode{border:1px solid var(--line);background:#11131a;color:#bbb;padding:12px;border-radius:15px;text-align:left;cursor:pointer}
+.mode b{display:block;color:#fff;font-size:13px}.mode small{font-size:10px;color:#858995}.mode.active{border-color:var(--accent);background:rgba(255,91,45,.12)}
+.wod{margin-top:14px;background:rgba(12,13,18,.8);border:1px solid var(--line);border-radius:24px;padding:18px}
+.wodhead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.modeName{font-size:24px;font-weight:900}.meta{color:#999eaa;font-size:12px;margin-top:4px}
+.refresh{border:1px solid var(--line);background:#1a1d27;color:#fff;border-radius:13px;padding:10px 12px;cursor:pointer}
+.exercise{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #252833}.exercise:last-child{border:0}
+.num{width:32px;height:32px;border-radius:10px;background:#20232d;display:grid;place-items:center;font-weight:900;color:#ffad8f}
+.exname{font-weight:750;font-size:14px}.reps{margin-left:auto;color:#ffb000;font-weight:900;font-size:14px}
+.start{width:100%;margin-top:16px;border:0;border-radius:17px;padding:16px;background:linear-gradient(100deg,var(--accent),#ff7b25);color:#fff;font-size:16px;font-weight:950;cursor:pointer;box-shadow:0 12px 35px rgba(255,91,45,.24)}
+.timerPanel{display:none;margin-top:14px;border-radius:28px;background:#0c0e13;border:1px solid #303440;padding:20px;text-align:center}
+.timerPanel.show{display:block}.timerLabel{font-size:11px;letter-spacing:.16em;color:#8e929e}.timer{font-size:72px;line-height:1;font-weight:950;letter-spacing:-.06em;margin:10px 0}.timer.accent{color:#ff7447}
+.current{border:1px solid #303440;background:#171a22;border-radius:18px;padding:15px;text-align:left}.current small{color:#858a96}.current strong{display:block;font-size:21px;margin-top:4px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.ctrl{padding:14px;border-radius:15px;border:1px solid var(--line);background:#171a22;color:#fff;font-weight:800;cursor:pointer}.ctrl.primary{background:#fff;color:#08090d}
+.result{display:none;margin-top:14px;padding:20px;border-radius:24px;background:linear-gradient(145deg,#141820,#0d0f14);border:1px solid #353944}.result.show{display:block}
+.result h2{margin:0 0 12px;font-size:25px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#191c25;border-radius:15px;padding:13px}.stat b{display:block;font-size:21px}.stat span{font-size:10px;color:#9296a2}
+@media(max-width:520px){.app{padding:13px 11px 24px}.hero{padding:18px;border-radius:23px}.title{font-size:33px}.modes{gap:6px}.mode{padding:10px 8px}.timer{font-size:58px}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><div class="brand">GANINA <span>FIT</span> / WOD LAB</div><div class="badge">CROSSFIT MODE</div></div>
+
+  <section class="hero">
+    <div class="kicker">TODAY'S ENGINE</div>
+    <div class="title">BUILD YOUR <em>WOD.</em></div>
+    <div class="subtitle">Тренировка создаётся прямо на устройстве. Выбирай формат — таймер сам подстроится под правила WOD.</div>
+
+    <div class="modes">
+      <button class="mode active" data-mode="amrap"><b>🔥 AMRAP</b><small>максимум раундов</small></button>
+      <button class="mode" data-mode="emom"><b>⏱ EMOM</b><small>каждую минуту</small></button>
+      <button class="mode" data-mode="rft"><b>🏃 RFT</b><small>раунды на время</small></button>
+    </div>
+
+    <div class="wod">
+      <div class="wodhead">
+        <div><div class="modeName" id="modeName"></div><div class="meta" id="meta"></div></div>
+        <button class="refresh" id="refresh">↻ Новый WOD</button>
+      </div>
+      <div id="exerciseList"></div>
+      <button class="start" id="start">▶ НАЧАТЬ</button>
+    </div>
+
+    <div class="timerPanel" id="timerPanel">
+      <div class="timerLabel" id="timerLabel">READY</div>
+      <div class="timer" id="timer">00:00</div>
+      <div class="current"><small id="currentSmall">Следующее</small><strong id="currentExercise">—</strong></div>
+      <div class="controls">
+        <button class="ctrl" id="pause">Ⅱ Пауза</button>
+        <button class="ctrl primary" id="action">Финиш</button>
+      </div>
+    </div>
+
+    <div class="result" id="result">
+      <h2>🏁 WOD COMPLETE</h2>
+      <div class="stats">
+        <div class="stat"><b id="resTime">—</b><span>ВРЕМЯ</span></div>
+        <div class="stat"><b id="resRounds">—</b><span>РАУНДЫ</span></div>
+        <div class="stat"><b id="resCal">—</b><span>ККАЛ</span></div>
+      </div>
+      <button class="start" id="send">✓ СОХРАНИТЬ В СТАТИСТИКУ</button>
+    </div>
+  </section>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+const $=id=>document.getElementById(id);
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+const EX=[
+ ["💪 Отжимания",8,15],["🦵 Приседания",12,20],["🔥 Бёрпи",6,12],["🏃 Выпады назад",10,16],
+ ["🤸 Горный альпинист",16,30],["💥 Jumping Jacks",20,35],["🔥 Скручивания",12,20],
+ ["🦵 Выпрыгивания",8,14],["💪 Pike push-ups",6,12],["🔥 Russian twist",12,20],
+ ["🏃 High knees",20,35],["🤸 Планка",20,40]
+];
+let mode="amrap", wod=null, started=false, paused=false, startAt=0, pauseAt=0, pausedTotal=0, timerId=null;
+let round=0, exerciseIndex=0, roundMarks=[];
+
+function makeWod(){
+  const count=rand(3,5), chosen=[];
+  while(chosen.length<count){const e=pick(EX);if(!chosen.some(x=>x[0]===e[0]))chosen.push(e);}
+  if(mode==="amrap") wod={duration:rand(8,20)*60,exercises:chosen};
+  if(mode==="emom"){const minutes=rand(6,20);wod={duration:minutes*60,minutes,exercises:chosen};}
+  if(mode==="rft") wod={rounds:rand(3,8),exercises:chosen};
+  renderWod();
+}
+function renderWod(){
+  const names={amrap:["🔥 AMRAP","MAX ROUNDS"],emom:["⏱ EMOM","EVERY MINUTE ON THE MINUTE"],rft:["🏃 RFT","ROUNDS FOR TIME"]};
+  $("modeName").textContent=names[mode][0];
+  $("meta").textContent=mode==="amrap"?`${wod.duration/60} мин • ${wod.exercises.length} упражнений`:
+    mode==="emom"?`${wod.minutes} мин • 1 упражнение / минута`:`${wod.rounds} раунда • ${wod.exercises.length} упражнений`;
+  $("exerciseList").innerHTML=wod.exercises.map((e,i)=>`<div class="exercise"><div class="num">${String(i+1).padStart(2,"0")}</div><div class="exname">${e[0]}</div><div class="reps">${e[1]}–${e[2]}</div></div>`).join("");
+}
+document.querySelectorAll(".mode").forEach(b=>b.onclick=()=>{if(started)return;document.querySelectorAll(".mode").forEach(x=>x.classList.remove("active"));b.classList.add("active");mode=b.dataset.mode;makeWod();});
+$("refresh").onclick=()=>{if(!started)makeWod();};
+function fmt(sec){sec=Math.max(0,Math.floor(sec));return `${String(Math.floor(sec/60)).padStart(2,"0")}:${String(sec%60).padStart(2,"0")}`;}
+function elapsed(){return Math.max(0,(Date.now()-startAt-pausedTotal-(paused?Date.now()-pauseAt:0))/1000);}
+function currentExercise(){return wod.exercises[exerciseIndex%wod.exercises.length];}
+function tick(){
+  if(!started||paused)return;
+  const e=elapsed();
+  if(mode==="amrap"){
+    const left=wod.duration-e;
+    $("timer").textContent=fmt(left);
+    $("timerLabel").textContent="TIME LEFT";
+    $("timer").classList.toggle("accent",left<=10);
+    $("currentSmall").textContent=`Раунд ${round+1} • задание`;
+    $("currentExercise").textContent=currentExercise()[0];
+    if(left<=0){finishAmrap();return;}
+  } else if(mode==="emom"){
+    const left=wod.duration-e;
+    const minute=Math.min(wod.minutes-1,Math.floor(e/60));
+    const secLeft=60-(Math.floor(e)%60);
+    $("timer").textContent=fmt(left);
+    $("timerLabel").textContent=`МИНУТА ${minute+1} / ${wod.minutes}`;
+    $("currentSmall").textContent=`Следующее переключение через ${secLeft} сек`;
+    $("currentExercise").textContent=wod.exercises[minute%wod.exercises.length][0];
+    if(left<=0){finishAuto();return;}
+  } else {
+    $("timer").textContent=fmt(e);
+    $("timerLabel").textContent=`РАУНД ${round+1} / ${wod.rounds}`;
+    $("currentSmall").textContent="Выполняй раунд и нажми кнопку";
+    $("currentExercise").textContent=currentExercise()[0];
+    $("action").textContent=round>=wod.rounds-1?"🏁 ФИНИШ ТРЕНИРОВКИ":"✓ ФИНИШ РАУНДА";
+  }
+}
+function start(){
+  started=true;paused=false;pausedTotal=0;round=0;exerciseIndex=0;roundMarks=[];
+  startAt=Date.now();$("timerPanel").classList.add("show");$("start").style.display="none";$("refresh").disabled=true;
+  $("action").disabled=false;clearInterval(timerId);timerId=setInterval(tick,200);tick();
+}
+function togglePause(){
+  if(!started)return;
+  if(!paused){paused=true;pauseAt=Date.now();$("pause").textContent="▶ Продолжить";}
+  else{pausedTotal+=Date.now()-pauseAt;paused=false;$("pause").textContent="Ⅱ Пауза";}
+  tick();
+}
+function finishAmrap(){round=Math.floor(round);finishAuto();}
+function finishAuto(){
+  const total=Math.round(elapsed());stopTimer();showResult(total);
+}
+function finishRft(){
+  const now=Math.round(elapsed());
+  roundMarks.push(now-(roundMarks.reduce((a,b)=>a+b,0)));
+  if(round>=wod.rounds-1){stopTimer();showResult(now);return;}
+  round++;exerciseIndex=0;tick();
+}
+function stopTimer(){started=false;paused=false;clearInterval(timerId);timerId=null;$("pause").textContent="Ⅱ Пауза";}
+function showResult(total){
+  $("timerPanel").classList.remove("show");$("result").classList.add("show");
+  $("resTime").textContent=fmt(total);$("resRounds").textContent=mode==="rft"?wod.rounds:(mode==="amrap"?Math.max(0,round):wod.minutes);
+  const weight=getWeight();const met=mode==="amrap"?10:mode==="emom"?8:9;
+  const cal=Math.round((met*3.5*weight/200)*total/60);
+  $("resCal").textContent=cal;
+  wod.finalSeconds=total;wod.calories=cal;
+}
+function getWeight(){
+  try{const p=JSON.parse(localStorage.getItem("userProfile")||"{}");return Number(p.weight)||70}catch(e){return 70}
+}
+$("start").onclick=start;$("pause").onclick=togglePause;
+$("action").onclick=()=>{if(mode==="rft")finishRft();else if(mode==="amrap"){round++;exerciseIndex++;tick();}};
+$("send").onclick=()=>{
+  const payload={
+    action:"workout_finished",workout_type:`CrossFit ${mode.toUpperCase()}`,mode:`CrossFit ${mode.toUpperCase()}`,
+    load:"CrossFit",focus:mode,duration_seconds:wod.finalSeconds,calories:wod.calories,weight:getWeight(),
+    rounds_completed:mode==="rft"?wod.rounds:round,total_rounds:mode==="rft"?wod.rounds:(mode==="amrap"?0:wod.minutes),
+    exercises:wod.exercises.map(e=>e[0]),details:`CrossFit ${mode.toUpperCase()} • ${wod.exercises.map(e=>e[0]).join(" • ")}`,
+    round_times:roundMarks,date:new Date().toISOString()
+  };
+  if(tg?.sendData){tg.sendData(JSON.stringify(payload));tg.close();}
+  else alert("Откройте тренировку через Telegram, чтобы сохранить результат в статистику.");
+};
+makeWod();
+</script>
+</body>
+</html>
